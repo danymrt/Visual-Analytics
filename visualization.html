@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>World Mental Disorder</title>
+  <!--Style-->
+  <link rel="stylesheet" href="style.css">
+  <!--D3.js and topojson-->
+  <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+</head>
+
+<body>
+  <div id = "main_container">
+    <!--checkbox Years-->
+    <div class="checkboxContainer">
+      <fieldset>
+        <legend>Years:</legend>
+        <form>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2010" style="background-color: #000; color: blue;"> 2010
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2011"> 2011
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2012"> 2012
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2013"> 2013
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2014"> 2014
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2015"> 2015
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2016"> 2016
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2017"> 2017
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2018"> 2018
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" value="2019" checked> 2019
+          </label>
+        </form>
+      </fieldset>
+    </div>
+    <!--WorldMap-->
+    <div id="geoView">
+      <svg id='map' width="750" height="380"></svg>
+    </div>
+  </div>
+</body>
+<!--Script for the Map-->
+<script type="text/javascript" src="geoMap.js"></script>
+<!--
+<script>
+  var margin = {top: 20, bottom: 20, left:20, right:20};
+  var completeWidth=window.innerWidth;
+  var completeHeight=window.innerHeight - 0.1*window.innerHeight;
+  var width = completeWidth - margin.left - margin.right;
+  var height = completeHeight -margin.top - margin.bottom;
+
+  //importDataset()
+  prova()
+</script>-->
+
+</html>
