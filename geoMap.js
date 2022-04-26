@@ -1,13 +1,14 @@
-//Legenda che quando clicchi seleziona solo quei paesi
 //Seleziona e fai zoom solo su un continente
 //zoom
 // Passi sopra a un paese info
 
-var selectedDisorder = ['eating']       //Selected disorders
+var selectedDisorder = ['eating']                 //Selected disorders
 var selectedYears = []                            //Selected years
 var mentalDB = []                                 //Store the dataset
 var max = 0
 var minMax = 0
+var clickColor = -1;                              //keep track of the click on the legend
+var checkLegend = 0;
 
 var svg = d3.select("#map"),
 width = +svg.attr("width"),
@@ -32,7 +33,7 @@ d3.csv('Dataset/Mental_Disorder_with_continent.csv')
     mentalDB = d3.nest().key(d => d.code).key(d => d.year).entries(rows);
   });
 
-  //Read the json file for the Map
+//Read the json file for the Map
 d3.json('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson', function(error,data){
   createMapWorld(data)
 })
@@ -46,8 +47,8 @@ const tooltip = d3.select("body").append("div")
 var legend = svg.append("g")
             .attr("id", "legend");
 
-updateYears();
 //check event change year
+updateYears();
 d3.selectAll("input[type=checkbox]").on("change",updateYears);
 
 
@@ -77,34 +78,62 @@ function updateYears(){
 
 //Mouse over the Country
 function onCountry(d){
-  d3.selectAll(".Country")
-    .transition()
-    .duration(200)
-    //.style("opacity", .5)
-    .style("stroke", "transparent");
-  d3.select(this)
-    .transition()
-    .duration(200)
-    .style("opacity", 1)
-    .style("stroke", d3.rgb(d3.select(this).style("fill")).darker());
-  tooltip.style("left", (d3.event.pageX + 15) + "px")
-    .style("top", (d3.event.pageY - 28) + "px")
-    .transition().duration(400)
-    .style("opacity", 1)
-    .text(d.properties.name);
+  if(checkLegend == 0){ //if we didn't click on the legend
+    d3.selectAll(".Country")
+      .style("opacity", .9);
+    d3.select(this)
+      .style("opacity", 1)
+      .style("stroke-width", 1.4)
+      //.style("stroke", d3.rgb(d3.select(this).style("fill")).darker());
+      .style("stroke", "black");
+    tooltip.style("left", (d3.event.pageX + 15) + "px")
+      .style("top", (d3.event.pageY - 28) + "px")
+      .transition().duration(400)
+      .style("opacity", 1)
+      .text(d.properties.name);
+  }else{ //if we click on the legend
+      d3.select(this)
+        .style("opacity", 0.8)
+        .style("stroke-width", 1.4)
+        //.style("stroke", d3.rgb(d3.select(this).style("fill")).darker());
+        .style("stroke", "black");
+      tooltip.style("left", (d3.event.pageX + 15) + "px")
+        .style("top", (d3.event.pageY - 28) + "px")
+        .transition().duration(400)
+        .style("opacity", 1)
+        .text(d.properties.name);
+    }
     //.style("stroke", "black")
+  /*
+  var ret = d3.select('.legend')
+    .selectAll('rect');
+  console.log(ret);*/
 }
 
 //Mouse out the country
 function outCountry(d){
-  d3.selectAll(".Country")
-			.transition()
-			.duration(200)
-			.style("opacity", 1)
-			.style("stroke", "transparent")
-      //.style("stroke-width", 0.5);
-		tooltip.transition().duration(300)
-			.style("opacity", 0);
+  if(checkLegend == 0) { //if we didn't click on the legend
+    d3.selectAll(".Country")
+  			.style("opacity", 1)
+        .style("stroke", "#D7DBDD")
+        .style("stroke-width", .2);
+  		tooltip.transition().duration(300)
+  			.style("opacity", 0);
+    }else{ //if we click on the legend
+      if(d3.select(this).attr('fill') == 'grey'){
+        d3.select(this)
+          .style("stroke", "#D7DBDD")
+          .style("stroke-width", .2)
+          .style("opacity", 0.5);
+      }else{
+        d3.select(this)
+          .style("stroke", "#D7DBDD")
+          .style("stroke-width", .2)
+          .style("opacity", 1);
+      }
+      tooltip.transition().duration(300)
+  			.style("opacity", 0);
+    }
 }
 
 //Function for create the Map of the world with TopoJson
@@ -115,7 +144,6 @@ function createMapWorld(topo){
     .scale(150)    //scale specifies the scale factor of the projection
     .center([0,20])  //center of projection
     .translate([(width / 2) - 50 , (height / 2)-25]); //where the center of projection is located on the screen
-
 
     // Draw the map
   svg.append("g")
@@ -128,16 +156,20 @@ function createMapWorld(topo){
       .projection(projection)
     )
     .attr('id', function(d){
-      return d.id;
+      if(d.properties.name == 'Northern Cyprus'){
+        d.id = 'NCYP'
+        return 'NCYP';
+      }
+      else return d.id;
     })
     .attr("data-name", function(d) {
 			return d.properties.name
 		})
     .attr('fill', 'white')
-    .style("stroke", "transparent")
-    //.style("stroke-width", 0.5)
+    .style("stroke", "#D7DBDD")
+    .style("stroke-width", .2)
     .attr("class", function(d){ return "Country" } )
-    .style("opacity", .8)
+    .style("opacity", 1)
     .on("mouseover", onCountry )
     .on("mouseleave", outCountry)
 
@@ -146,7 +178,6 @@ function createMapWorld(topo){
 
 //Function for coloring the countries respect the queries
 function colorMap(){
-
   var sum = 0 //Sum selected disorder for different years
   var data = [] //set for (key, value) : (Code_Country, Sum_disorder)
   var setSum = d3.map() //Array for all the sum of each country
@@ -181,23 +212,27 @@ function colorMap(){
   //console.log(colorScale.quantiles())
 
   setSum.each(function(value, key){
-    //For each country we select the path in the map
-    var country = d3.select("#map")
-                    .selectAll('path')
-                    .filter(function(d){
-                        return d.id == key;
-                      });
-
-    country.attr('fill', function(d){
-                return colorScale(value);});
+      //For each country we select the path in the map
+      d3.select("#map")
+        .selectAll('path')
+        .filter(function(d){
+              return d.id == key;
+        })
+        .attr('fill', function(d){
+              return colorScale(value);
+        })
+        .style("stroke", "#D7DBDD")
+        .style("stroke-width", .2);
     });
 
-    updateLegend(colorScale)
+    updateLegend(colorScale);
 }
 
 //Function for adding and updating legend
 function updateLegend(colorScale){
 
+  var heightLegend = 80
+  var widthLegend = 145
   //Remove all the part we did befor
   legend.selectAll("g").remove();
 
@@ -206,8 +241,8 @@ function updateLegend(colorScale){
         .attr("x", 10)
         .attr("y", height - 86)
         .attr("id", "rectLeg")
-        .attr("width", 145)
-        .attr("height", 80)
+        .attr("width", widthLegend)
+        .attr("height", heightLegend)
         .style("fill", 'white')
         .style('opacity', 0.2)
         .attr("rx", 4);
@@ -235,6 +270,9 @@ function updateLegend(colorScale){
           })
           .attr("width", size)
           .attr("height", size)
+          .on('mouseover', onLegend)
+          .on('mouseleave', outLegend)
+          .on('click', clickLegend)
           .style("fill", function(d){ return colorScale(d[0])})
 
 
@@ -258,5 +296,73 @@ function updateLegend(colorScale){
             .attr("x", 20)
             .attr("y", height - 72)
             .text("POP. WITH DISORDERS");
+
+}
+
+//Select only the countries with the selected color
+function clickLegend(){
+  //Color selected on the legend
+  var colorLegend = d3.select(this).style('fill');
+
+  //If click the second time on the right color, color all the map
+  if(clickColor == colorLegend){
+    clickColor = -1;
+    checkLegend = 0;
+    d3.select("#map")
+      .selectAll('path')
+      .style('opacity',1)
+      .attr('fill','white')
+    colorMap()
+    checkLegend = 0;
+  }else{
+    checkLegend = 1;
+    //click for the first time on a color on the legend
+    if(clickColor == -1){
+      clickColor = colorLegend;
+      d3.select("#map")
+        .selectAll('path')
+        .each((item, i) => {
+          var color = d3.select('#'+item.id).style('fill');
+          if(color != colorLegend){
+            d3.select('#'+item.id)
+              .attr('fill', 'grey')
+              .style('opacity', 0.5);
+          }
+        });
+    //If click the second time on the wrong color, we do nothing
+    }else{
+      return;
+    }
+  }
+}
+
+//Lightning the country with the selected color
+function onLegend(){
+
+  d3.select(this)
+    .style('stroke-width', 1);
+
+  d3.select("#map")
+    .selectAll('path')
+    .each((item, i) => {
+      color = d3.select('#'+item.id).style('fill');
+
+      if(color == d3.select(this).style('fill')){
+        d3.select('#'+item.id)
+          .style('stroke', "black")
+          .style('stroke-width', 1.5);
+      }
+    });
+}
+
+//Deselect the country with the selected color
+function outLegend(){
+
+    d3.select(this)
+      .style('stroke-width', 0.1);
+
+    d3.selectAll(".Country")
+    .style("stroke", "#D7DBDD")
+    .style("stroke-width", .2);
 
 }
