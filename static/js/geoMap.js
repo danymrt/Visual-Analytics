@@ -1,18 +1,21 @@
-//Seleziona e fai zoom solo su un continente
-//zoom
+// Seleziona e fai zoom solo su un continente
+// zoom
 // Passi sopra a un paese info
 
+var selectView = ['Europe']
 var selectedDisorder = ['eating']                 //Selected disorders
 var selectedYears = []                            //Selected years
 var mentalDB = []                                 //Store the dataset
 var max = 0
 var minMax = 0
-var clickColor = -1;                              //keep track of the click on the legend
-var checkLegend = 0;
+var clickColor = -1;                              //keep track of the click on the color of the legend
+var checkLegend = 0;                              //keep track of the click on the legend
 
 var svg = d3.select("#map"),
 width = +svg.attr("width"),
 height = +svg.attr("height");
+
+var active = d3.select(null);
 
 //Get the dataBase in the variable mentalDB
 d3.csv('Dataset/Mental_Disorder_with_continent.csv')
@@ -34,7 +37,10 @@ d3.csv('Dataset/Mental_Disorder_with_continent.csv')
   });
 
 //Read the json file for the Map
-d3.json('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson', function(error,data){
+/*d3.json('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson', function(error,data){
+  createMapWorld(data)
+})*/
+d3.json('Dataset/Mediumcustom.geo.json', function(error,data){
   createMapWorld(data)
 })
 
@@ -51,6 +57,51 @@ var legend = svg.append("g")
 updateYears();
 d3.selectAll("input[type=checkbox]").on("change",updateYears);
 
+//d3.selectAll("button").on("click",zoomWorldToContinent);
+var zoom = d3.zoom().scaleExtent([1, 8]).on('zoom', zoomed);
+
+svg.call(zoom); // delete this line to disable free zooming
+
+d3.select("#zoom_in").on("click", function() {
+  zoom.scaleBy(svg.transition().duration(400), 1.2);
+});
+d3.select("#zoom_out").on("click", function() {
+  zoom.scaleBy(svg.transition().duration(400), 0.8);
+});
+
+function zoomed(){
+  svg.selectAll('path')
+   .attr('transform', d3.event.transform);
+}
+
+d3.select("#continent_zoom").on("click", zoomWorldToContinent);
+
+function zoomWorldToContinent(){
+
+  var continent =[]
+   d3.selectAll('.Country')
+   .each((item, i) => {
+     if(item.properties.continent == "Africa"){
+       continent.push(d3.select('#'+item.properties.adm0_a3).node());
+     }
+   });
+   console.log(continent);
+
+  var data = []
+  d3.selectAll(".Country")
+    .attr("transform", function() {
+      var bBox = this.getBBox();
+
+      var scale = Math.max(1, Math.min(8, 0.9 / Math.max(bBox.width / width, bBox.height / height)));
+      var translate = [width / 2 - scale * bBox.x, height / 2 - scale * bBox.y];
+
+      svg.transition()
+          .duration(750)
+          .call( zoom.transform, d3.zoomIdentity.translate(translate[0],translate[1]).scale(scale) ); // updated for d3 v4
+      //return "translate(" + 0 + ','+ 0 + ") scale(0.4)";
+    });
+
+}
 
 //Update the years array when the user select the checkboxes
 function updateYears(){
@@ -83,7 +134,7 @@ function onCountry(d){
       .style("opacity", .9);
     d3.select(this)
       .style("opacity", 1)
-      .style("stroke-width", 1.4)
+      .style("stroke-width", 1.05)
       //.style("stroke", d3.rgb(d3.select(this).style("fill")).darker());
       .style("stroke", "black");
     tooltip.style("left", (d3.event.pageX + 15) + "px")
@@ -93,8 +144,8 @@ function onCountry(d){
       .text(d.properties.name);
   }else{ //if we click on the legend
       d3.select(this)
-        .style("opacity", 0.8)
-        .style("stroke-width", 1.4)
+        .style("opacity", 1)
+        .style("stroke-width", 1.05)
         //.style("stroke", d3.rgb(d3.select(this).style("fill")).darker());
         .style("stroke", "black");
       tooltip.style("left", (d3.event.pageX + 15) + "px")
@@ -120,7 +171,7 @@ function outCountry(d){
   		tooltip.transition().duration(300)
   			.style("opacity", 0);
     }else{ //if we click on the legend
-      if(d3.select(this).attr('fill') == 'grey'){
+      if(d3.select(this).attr('fill') == '#839192'){
         d3.select(this)
           .style("stroke", "#D7DBDD")
           .style("stroke-width", .2)
@@ -136,8 +187,19 @@ function outCountry(d){
     }
 }
 
+var path;
 //Function for create the Map of the world with TopoJson
 function createMapWorld(topo){
+
+  // We group the countries in contients (We removed Antarctica and we put oceania with Asia)
+  /*
+  var asia = {type: "FeatureCollection", name: "Asia", id:1, features: topo.features.filter(function(d) { return d.properties.continent == "Asia"; })};
+  var africa = {type: "FeatureCollection", name: "Africa", id:2, features: topo.features.filter(function(d) { return d.properties.continent == "Africa"; })};
+  var europe = {type: "FeatureCollection", name: "Europe", id:3, features: topo.features.filter(function(d) { return d.properties.continent == "Europe"; })};
+  var na = {type: "FeatureCollection", name: "North America", id:4, features: topo.features.filter(function(d) { return d.properties.continent == "North America"; })};
+  var sa = {type: "FeatureCollection", name: "South America", id:5, features: topo.features.filter(function(d) { return d.properties.continent == "South America"; })};
+  var continents = [asia,africa,europe,na,sa];
+  */
   //A projection function takes a longitude and latitude co-ordinate
   //(in the form of an array [lon, lat]) and transforms it into an x and y co-ordinate
   var projection = d3.geoNaturalEarth1()
@@ -145,10 +207,13 @@ function createMapWorld(topo){
     .center([0,20])  //center of projection
     .translate([(width / 2) - 50 , (height / 2)-25]); //where the center of projection is located on the screen
 
+  path = d3.geoPath().projection(projection)
+
+  /*
     // Draw the map
   svg.append("g")
     .selectAll("path")
-    .data(topo.features)
+    .data(continents)
     .enter()
     .append("path")
     // draw each country
@@ -156,14 +221,40 @@ function createMapWorld(topo){
       .projection(projection)
     )
     .attr('id', function(d){
-      if(d.properties.name == 'Northern Cyprus'){
+        return d.id;
+    })
+    .attr("data-name", function(d) {
+  			return d.name;
+  	})
+    .attr('fill', 'black')
+    .style("stroke", "red")
+    .attr("class", function(d){ return "Continent" } )
+    .style("opacity", 1)
+    .on("mouseover", onCountry )
+    .on("mouseleave", outCountry)*/
+
+
+  // Draw the map
+  svg.append("g")
+    .selectAll("path")
+    .data(topo.features)
+    .enter()
+    .append("path")
+    // draw each country
+    .attr("d", path)
+    .attr('id', function(d){
+      //console.log(d);
+      /*if(d.properties.name == 'Northern Cyprus'){
         d.id = 'NCYP'
         return 'NCYP';
       }
-      else return d.id;
+      else*/ return d.properties.adm0_a3;
     })
     .attr("data-name", function(d) {
 			return d.properties.name
+		})
+    .attr("continent", function(d) {
+			return d.properties.continent
 		})
     .attr('fill', 'white')
     .style("stroke", "#D7DBDD")
@@ -172,8 +263,44 @@ function createMapWorld(topo){
     .style("opacity", 1)
     .on("mouseover", onCountry )
     .on("mouseleave", outCountry)
+    .on("click", clicked);
 
     colorMap()
+}
+
+//var g = svg.append("g");
+
+function reset() {
+  svg.transition()
+      .duration(750)
+      // .call( zoom.transform, d3.zoomIdentity.translate(0, 0).scale(1) ); // not in d3 v4
+      .call( zoom.transform, d3.zoomIdentity ); // updated for d3 v4
+}
+
+function clicked(d) {
+  if (active.node() === this) return reset();
+  active.classed("active", false);
+  active = d3.select(this).classed("active", true);
+
+  var continent = d3.selectAll(".Country")
+    .filter(function(d){
+      if (d.properties.continent == 'Europe'){
+        return d;
+      }
+    })
+
+  var bounds = path.bounds(d),
+      dx = bounds[1][0] - bounds[0][0],
+      dy = bounds[1][1] - bounds[0][1],
+      x = (bounds[0][0] + bounds[1][0]) / 2,
+      y = (bounds[0][1] + bounds[1][1]) / 2,
+      scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / width, dy / height))),
+      translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+  svg.selectAll('path').transition()
+      .duration(750)
+      // .call(zoom.translate(translate).scale(scale).event); // not in d3 v4
+      .call( zoom.transform, d3.zoomIdentity.translate(translate[0],translate[1]).scale(scale) ); // updated for d3 v4
 }
 
 //Function for coloring the countries respect the queries
@@ -213,10 +340,9 @@ function colorMap(){
 
   setSum.each(function(value, key){
       //For each country we select the path in the map
-      d3.select("#map")
-        .selectAll('path')
+      d3.selectAll('.Country')
         .filter(function(d){
-              return d.id == key;
+              return d.properties.adm0_a3 == key;
         })
         .attr('fill', function(d){
               return colorScale(value);
@@ -308,8 +434,7 @@ function clickLegend(){
   if(clickColor == colorLegend){
     clickColor = -1;
     checkLegend = 0;
-    d3.select("#map")
-      .selectAll('path')
+    d3.selectAll('.Country')
       .style('opacity',1)
       .attr('fill','white')
     colorMap()
@@ -319,14 +444,13 @@ function clickLegend(){
     //click for the first time on a color on the legend
     if(clickColor == -1){
       clickColor = colorLegend;
-      d3.select("#map")
-        .selectAll('path')
+      d3.selectAll('.Country')
         .each((item, i) => {
-          var color = d3.select('#'+item.id).style('fill');
+          var color = d3.select('#'+item.properties.adm0_a3).style('fill');
           if(color != colorLegend){
-            d3.select('#'+item.id)
-              .attr('fill', 'grey')
-              .style('opacity', 0.5);
+            d3.select('#'+item.properties.adm0_a3)
+              .attr('fill', '#839192')
+              .style('opacity', 0.6);
           }
         });
     //If click the second time on the wrong color, we do nothing
@@ -342,15 +466,14 @@ function onLegend(){
   d3.select(this)
     .style('stroke-width', 1);
 
-  d3.select("#map")
-    .selectAll('path')
+  d3.selectAll('.Country')
     .each((item, i) => {
-      color = d3.select('#'+item.id).style('fill');
+      color = d3.select('#'+item.properties.adm0_a3).style('fill');
 
       if(color == d3.select(this).style('fill')){
-        d3.select('#'+item.id)
+        d3.select('#'+item.properties.adm0_a3)
           .style('stroke', "black")
-          .style('stroke-width', 1.5);
+          .style('stroke-width', 1.05);
       }
     });
 }

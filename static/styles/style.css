@@ -18,6 +18,8 @@ html{
 }
 
 #legend {
+	position: absolute;
+	z-index: 200;
   font-size: 0.8em;
 }
 
@@ -29,6 +31,27 @@ html{
 .legend text {
 	  color:black;
 	}
+
+.zoom_control .button_zoom:not(:last-child) {
+  border-bottom: none; /* Prevent double borders */
+}
+
+.zoom_control .button_zoom:hover {
+  background-color: trasparent;
+}
+
+.zoom_control{
+  background-color: #e7e7e7; /* Grey */
+  border: 1px solid black;
+  color: black;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+	width: 40px;
+  cursor: pointer;
+  display: block;
+	border-radius: 6px;
+}
 
 div.tooltip {
   position: absolute;
