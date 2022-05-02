@@ -1,78 +1,40 @@
 <!DOCTYPE html>
-<html>
+<meta charset="utf-8">
 <head>
-  <meta charset="utf-8">
-  <title>World Mental Disorder</title>
-  <!--Style-->
-  <link rel="stylesheet" href="style.css">
-  <!--D3.js and topojson-->
-  <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
-  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-  <script src="https://unpkg.com/topojson-client@3"></script>
-
-  <!--Leaflet-->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+  <title>MentalHealth: a visualization tool for mental health disorders</title>
+  <!--<link rel="stylesheet" href="mental_health_disorders_map.css">-->
 </head>
+<!-- Styles -->
+<link rel="stylesheet" type="text/css" href="mental_health_disorders_map.css">
+<!-- D3.js -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
 
-<body>
-  <div id = "main_container">
-    <!--checkbox Years-->
-    <div class="checkboxContainer">
-      <fieldset>
-        <legend>Years:</legend>
-        <form autocomplete="off">
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2010" style="background-color: #000; color: blue;"> 2010
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2011"> 2011
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2012"> 2012
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2013"> 2013
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2014"> 2014
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2015"> 2015
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2016"> 2016
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2017"> 2017
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2018"> 2018
-          </label>
-          <label class="checkbox-inline">
-            <input type="checkbox" value="2019" checked> 2019
-          </label>
-        </form>
-      </fieldset>
+  <body>
+
+
+    <div id="block_container">
+
+
+      <div id="geoView">
+        <svg id='map' ></svg>
+      </div>
+
     </div>
-    <!--WorldMap-->
-    <div id="geoView">
-      <svg id='map' width="750" height="380"></svg>
-    </div>
-  </div>
-</body>
-<!--Script for the Map-->
-<script type="text/javascript" src="geoMap.js"></script>
-<!--
-<script>
-  var margin = {top: 20, bottom: 20, left:20, right:20};
-  var completeWidth=window.innerWidth;
-  var completeHeight=window.innerHeight - 0.1*window.innerHeight;
-  var width = completeWidth - margin.left - margin.right;
-  var height = completeHeight -margin.top - margin.bottom;
 
-  //importDataset()
-  prova()
-</script>-->
+    <div id= "par-coord">
+      <div id="my_dataviz"></div>
+    <div>
 
+
+    <!--script for Parallel coordinates-->
+    <!--<script  src= "/Users/felicemassotti/Desktop/visual/project/General/parallel_coo.js" ></script>-->
+    <script type="text/javascript" src="parallel_coo.js"></script>
+
+    <!--Script for the Map-->
+    <script type="text/javascript" src="geoMap.js"></script>
+
+  </body>
 </html>

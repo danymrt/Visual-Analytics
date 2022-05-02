@@ -1,0 +1,110 @@
+body{
+	background:#202124;
+	/*#121212*/
+}
+
+html{
+	color: white;
+	font-size: 0.8em;
+	font-family: "Lucida Console";
+}
+
+#legend {
+	position: absolute;
+  font-size: 0.8em;
+}
+
+.legend rect {
+  fill:white;
+	stroke: black;
+	stroke-width: 0.1;}
+
+.legend text {
+	  color:black;
+	}
+
+.zoom_control .button_zoom:not(:last-child) {
+  border-bottom: none; /* Prevent double borders */
+}
+
+.zoom_control .button_zoom:hover {
+  background-color: trasparent;
+}
+
+.zoom_control{
+  background-color: #e7e7e7; /* Grey */
+  border: 1px solid black;
+  color: black;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+    width: 40px;
+  cursor: pointer;
+  display: block;
+	border-radius: 6px;
+}
+
+div.tooltip {
+  position: absolute;
+  padding: 5px;
+	line-height: 0.5;
+	color: black;
+  font-size: 0.7em;
+  pointer-events: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, 0.25);
+}
+
+
+
+#map {
+    background: #202124;
+    position: absolute;
+    height: 55.5%;
+    width: 56.5%;
+  }
+  
+/*PARALLEL COORDINATES*/
+
+
+#par-coord{
+  /*border:3px solid black;*/
+  /*border-style: inset;*/
+  /*border-radius: 5px;*/
+  background:#202124;
+  position: absolute;
+  top:57%;
+  height: 42%;
+  width: 56.5%;
+}
+
+#my_dataviz{
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.PCtooltip {
+  border-radius: 25px;
+  background: lightgray;
+  display:none;
+  padding: 5px;
+  font-family: sans-serif;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+.background path {
+  fill: none;
+  stroke: #ddd;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  stroke: steelblue;
+}
