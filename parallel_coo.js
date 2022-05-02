@@ -8,7 +8,7 @@ ABSOLUTE = false
 MDS_PC_LOCK = false
 
 //var dataset_path = "/Users/felicemassotti/Desktop/visual/project/General/datasets/Mental_Disorder_with_continent.csv"
-var dataset_path = "dataset/Mental_Disorder_with_continent.csv";    //Pythonanywhere
+var dataset_path = "Dataset/Mental_Disorder_with_continent.csv";    //Pythonanywhere
 var visualization = '1'; //variable that contain the visualization type of the moment: =0 =>vis. for countries; =1 => vis. for continent
 
 function get_continents(data) {
@@ -55,7 +55,7 @@ function filterByYear(year,data){
 
 function findPopulation(entity, year){
   //var dataset_path2 = "/Users/felicemassotti/Desktop/visual/project/General/datasets/cleaned_dataset2.csv"
-  var dataset_path2 = "/static/dataset/cleaned_dataset4.csv"    //Pythonanywhere
+  var dataset_path2 = "Dataset/cleaned_dataset4.csv"    //Pythonanywhere
   var population = 0
   d3.text(dataset_path2 ,function(data){
     var dsv = d3.dsvFormat(',');

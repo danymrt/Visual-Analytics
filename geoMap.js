@@ -23,12 +23,12 @@ widthMap = document.getElementById("map").clientWidth,
 heightMap = document.getElementById("map").clientHeight;
 
 //Load file geojson
-d3.json('dataset/Mediumcustom.geo.json', function(error,data){
+d3.json('Dataset/Mediumcustom.geo.json', function(error,data){
   createMapWorld(data)
 })
 
 //Get the dataBase in the variable mentalDB
-d3.csv('dataset/cleaned_dataset4.csv')
+d3.csv('Dataset/cleaned_dataset4.csv')
   .row(function(d){ return {"code": d.Code,
       "series": d.Series,
       "name": d.Name,
@@ -255,7 +255,7 @@ function colorMap(){
   var dict_countries = [] //set for (key, value) : (Code_Country, Sum_disorder)
   var setSum = d3.map() //Array for all the sum of each country
 
-  d3.csv('dataset/Mental_Disorder_with_continent.csv')
+  d3.csv('Dataset/Mental_Disorder_with_continent.csv')
     .row(function(d) {
       return {code: d.Code,
         "entity": d.Entity,
@@ -513,7 +513,7 @@ function showPopulation(show_population){
                     .domain([min, max])
                     .range([0, 50]);
 
-  d3.csv('dataset/countries.csv',  function(error,data){
+  d3.csv('Dataset/countries.csv',  function(error,data){
     data.forEach((item, i) => {
       var p = projection([item.longitude,item.latitude]);
       if(show_population == true){
