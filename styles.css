@@ -141,3 +141,15 @@ div.tooltip {
   fill: none;
   stroke: steelblue;
 }
+
+.dimension .axis path.domain {
+   stroke: #ffffff;
+}
+
+.dimension text{
+	fill: #ffffff
+}
+
+.dimension line{
+	stroke: #ffffff
+}

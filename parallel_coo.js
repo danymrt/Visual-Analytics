@@ -322,7 +322,7 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
     .style("text-anchor", "middle")
     .attr("y", -9)
     .text(function(d) { return d; })
-    .style("fill", "black");
+    .style("fill", "#ffffff");
 
 // Add and store a brush for each axis.
   g.append("g")
