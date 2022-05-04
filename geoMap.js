@@ -179,7 +179,7 @@ function updateYears(){
 
 //Mouse over the Country
 function onCountry(d){
-
+  code = d3.select(this).attr("id")
   var tooltip_string = "<p><strong>"+ d.properties.name +"</strong></p><hr>"
 
     d3.selectAll(".Country")
@@ -228,6 +228,16 @@ function onCountry(d){
             .duration(400)
             .style("opacity", 0.9);
 
+
+    //color red the corresponding path on the parallel_coo
+    d3.select("#my_dataviz").selectAll("path").each(function(t){
+      if(d3.select(this).attr("name") != null){
+        if(code == d3.select(this).attr("name")){
+          d3.select(this).style("stroke", "#d7191c")
+        }
+      }
+    })
+
 }
 
 //Mouse out the country
@@ -238,6 +248,13 @@ function outCountry(d){
         .style("stroke-width", .1);
   	tooltip_countries.transition().duration(300)
   		  .style("opacity", 0);
+
+    //color blue all path on the parallel_coo
+    d3.select("#my_dataviz").selectAll("path").each(function(t){
+      if(d3.select(this).attr("name")!= null){
+        d3.select(this).style("stroke", "#2c7bb6")
+      }
+    })
 }
 
 //Function for create the Map of the world with TopoJson
@@ -437,18 +454,23 @@ function clickLegendDisorder(){
   var colorLegend = d3.select(this).style('fill');
 
   if(checkLegend == 0){ //First time on the legend , enlighten only the selected color
+    COUNTRIES = []
     checkLegend = 1;
     clickColor.push(colorLegend);
     console.log(clickColor);
     d3.selectAll('.Country')
       .each((item, i) => {
         var color = d3.rgb(d3.select('#'+item.properties.adm0_a3).attr('color-disorder')).toString();
+        var name = d3.select('#'+item.properties.adm0_a3).attr('name');    //// TODO: change with code, also in draw
         if(color != colorLegend){
           d3.select('#'+item.properties.adm0_a3)
             .attr('fill', '#797D7F')
             .style('opacity', 1);
+        }else{
+          COUNTRIES.push(name);
         }
       });
+      draw(YEAR, CMD_CONTINENT, COUNTRIES, DISORDERS, ABSOLUTE)
   }else{ //I already clicked on the legend
 
     if(clickColor.includes(colorLegend.toString())){ //I have alredy clicked on this color and make that countries grey
@@ -460,24 +482,35 @@ function clickLegendDisorder(){
       d3.selectAll('.Country')
         .each((item, i) => {
           var color = d3.rgb(d3.select('#'+item.properties.adm0_a3).attr('color-disorder')).toString();
+          var name = d3.select('#'+item.properties.adm0_a3).attr('name');
           if(color == colorLegend){
             d3.select('#'+item.properties.adm0_a3)
               .attr('fill', '#797D7F')
               .style('opacity', 1);
+              index = COUNTRIES.indexOf(name);
+                if (index > -1) {
+                  COUNTRIES.splice(index, 1); // 2nd parameter means remove one item only
+                }
           }
         });
+        console.log(COUNTRIES);
+        //// TODO: if there are no countries
+        draw(YEAR, CMD_CONTINENT, COUNTRIES, DISORDERS, ABSOLUTE)
     }else{ // I never clicked on that and we  enlighten that countries
       clickColor.push(colorLegend)
       console.log(clickColor);
       d3.selectAll('.Country')
         .each((item, i) => {
           var color = d3.rgb(d3.select('#'+item.properties.adm0_a3).attr('color-disorder'));
+          var name = d3.select('#'+item.properties.adm0_a3).attr('name');
           if(color.toString() == colorLegend){
             d3.select('#'+item.properties.adm0_a3)
               .attr('fill', color)
               .style('opacity', 1);
+              COUNTRIES.push(name);
           }
         });
+        draw(YEAR, CMD_CONTINENT, COUNTRIES, DISORDERS, ABSOLUTE)
     }
   }
   if(clickColor.length == 5){ //Select all the color on the legend and we restart from zero
@@ -499,14 +532,27 @@ function onLegendDisorder(){
   d3.select(this)
     .style('stroke-width', 1);
 
+//this is only for country - visualization=0, for continent?
   d3.selectAll('.Country')
     .each((item, i) => {
       color = d3.select('#'+item.properties.adm0_a3).style('fill');
+      code = d3.select('#'+ item.properties.adm0_a3).attr('id');
 
       if(color == d3.select(this).style('fill')){
         d3.select('#'+item.properties.adm0_a3)
           .style('stroke', "black")
           .style('stroke-width', 1.05);
+
+          //color red the corresponding path of parallel_coo
+        d3.select("#my_dataviz").selectAll('path').each(function(t){
+          if(d3.select(this).attr("name") != null){
+            if(code == d3.select(this).attr("name")){
+              console.log(d3.select(this).attr("name"));
+              d3.select(this).raise().classed("active", true);
+              d3.select(this).style("stroke", "#d7191c")
+            }
+          }
+        });
       }
     });
 }
@@ -521,6 +567,22 @@ function outLegendDisorder(){
     .style("stroke", "#273746")
     .style("stroke-width", .1);
 
+    //color blue parallel_coo
+    if(brushing=="1"){
+      d3.select("#my_dataviz").selectAll("path").each(function(t){
+        if(d3.select(this).attr("name")!= null){
+          if(d3.select(this).classed("active")== true){
+            d3.select(this).style("stroke", "#2c7bb6")
+          }
+        }
+      })
+    }else{
+      d3.select("#my_dataviz").selectAll("path").each(function(t){
+        if(d3.select(this).attr("name")!= null){
+          d3.select(this).style("stroke", "#2c7bb6")
+        }
+      })
+    }
 }
 
 //Create bubble map over the map for showing the population

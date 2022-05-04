@@ -1,4 +1,4 @@
-YEAR = [2010,2011,2012,2013,2014,2015,2016,2017,2018,2019]   //2010,2011,2012,2013,2014,2015,2016,2017,2018,
+YEAR = [2019]   //2010,2011,2012,2013,2014,2015,2016,2017,2018,
 CMD_COUNTRIES = "only"
 CMD_CONTINENT = false
 COUNTRIES = ["Algeria","Burundi","Cuba","Italy", "Ireland"]
@@ -10,12 +10,11 @@ MDS_PC_LOCK = false
 //var dataset_path = "/Users/felicemassotti/Desktop/visual/project/General/datasets/Mental_Disorder_with_continent.csv"
 var dataset_path = "Dataset/Mental_Disorder_with_continent.csv";    //Pythonanywhere
 var visualization = '1'; //variable that contain the visualization type of the moment: =0 =>vis. for countries; =1 => vis. for continent
+var brushing = '0';   //indicates if exists any brush 0->no , 1-> yes
 
 function get_continents(data) {
   const data_filtered = []
   for(let i =0 ; i < data.length ; i++){
-    //console.log("ciaoooo6");
-    //console.log(i);
     if(data[i].Code == ""){
     //if(data[i].Entity == "Europe"){
       data_filtered.push(data[i])
@@ -75,7 +74,7 @@ function findPopulation(entity, year){
 }
 
 function filterbyDisorder(){
-
+//// TODO: draw new paralell
 }
 
 // set the dimensions and margins of the graph
@@ -174,12 +173,12 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
     .attr("d", path);
 
 
-  foreground.attr("name",function(d){return d["Entity"]})
+  foreground.attr("name",function(d){return d.Code})
       .on("mouseover", function(d) {
         d3.select(this).raise().classed("active", true);
         d3.select("#my_dataviz").selectAll('path').each(function(t){
           if (d3.select(this).attr("name") != null){
-            if(d["Entity"].trim() == d3.select(this).attr("name").trim()){
+            if(d.Code.trim() == d3.select(this).attr("name").trim()){
               d3.select(this).raise().classed("active", true);
               d3.select(this).style("stroke", "#d7191c")
             }
@@ -199,11 +198,17 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         // metti in rilievo su mappe ,guarda visualization
         name = d.Entity
         if(visualization==1){
-          d3.select("#my_dataviz").selectAll('path').each(function(t){
-            //console.log(t);
-            d3.select(this).style("stroke-width", "1.5")
-            })
+          d3.selectAll(".Country")
+            .each((item,i) =>{
+              code = d3.select("#"+ item.properties.adm0_a3).attr("id");
+              if(code == d3.select(this).attr("name")){
+                d3.select("#"+item.properties.adm0_a3)
+                  .style("stroke", "black")
+                  .style("stroke-width", 1.05);
+                }
+              })
         }
+        //// TODO: visualization == 0    //continent
         /* mette in rilievo su mds
         brushed_p=[];
         d3.selectAll('.brushed').each(function(d){brushed_p.push(d)})
@@ -224,20 +229,11 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         //removeTooltip
         d3.selectAll('.PCtooltip').style('display', 'none')
         name =d['Entity'].trim()
-        if(visualization==0){
-          var id =d3.select('#mapCountry').selectAll('path').filter(function(d){
-            var terName = d3.select('#'+this['id']).attr('name');
-            console.log(terName);
-            return terName == name;
-          });
-        }
-        else{
-          var id =d3.select('#mapContinent').selectAll('path').filter(function(d){
-            var terName = d3.select('#'+this['id']).attr('name');
-            console.log(terName);
-            return terName == name;
-          });
-        }
+        if(visualization==1){
+          d3.selectAll(".Country")
+            .style("stroke", "#D7DBDD")
+            .style("stroke-width", .2);
+        } //// TODO: else visualization==0 for continent
 
         brushed_p=[];
         d3.selectAll('.brushed').each(function(d){
@@ -342,9 +338,11 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
     .attr("width", 16);
 
   function brush_end() {
-    var brushedEntity= brush();
+    var all_brushed = true
+    var brush_result = brush()
+    var brushedEntity= brush_result[0];
     var entity = []
-    brushedEntity.forEach( n => entity.push(n.Entity.trim()) )
+    brushedEntity.forEach( n => entity.push(n.Code.trim()) )
     if(visualization==0){
       var idNotBrush =d3.select('#mapCountry').selectAll('path').filter(function(d){
           return !entity.includes( d3.select('#'+this['id']).attr('name') );
@@ -354,11 +352,13 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
       });
     }
     else{
-      var idNotBrush =d3.select('#mapContinent').selectAll('path').filter(function(d){
-        return !entity.includes( d3.select('#'+this['id']).attr('name') );
+      var idNotBrush =d3.selectAll('.Country').filter(function(d){
+        //console.log("idNotBrush: "+ d3.select('#'+d.properties.adm0_a3).attr('id'));
+        return !entity.includes( d3.select('#'+d.properties.adm0_a3).attr('id') );
        });
-      var idBrush =d3.select('#mapContinent').selectAll('path').filter(function(d){
-        return entity.includes( d3.select('#'+this['id']).attr('name') );
+      var idBrush =d3.selectAll('.Country').filter(function(d){
+        //console.log("idBrush: "+ d3.select('#'+d.properties.adm0_a3).attr('id'));
+        return entity.includes( d3.select('#'+d.properties.adm0_a3).attr('id') );
       });
     }
     idNotBrush.style('opacity','0.5');
@@ -372,10 +372,27 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         d3.select(this).classed("pc_brushed", false);
       }
     })
+
+    //if all brush have been removed and there are no actives restore all countries
+    d3.select("#my_dataviz").selectAll("path").each(function(t){
+      if(d3.select(this).attr("name")!= null){
+        if(!entity.includes(d3.select(this).attr("name"))){
+          all_brushed = false
+        }
+      }
+    })
+    actives = brush_result[1]
+    if(all_brushed && actives.length==0){
+      brushing = "0"
+      idNotBrush.style('opacity','1');
+      idBrush.style('opacity','1');
+    }
+
   }
 
   // Handles a brush event, toggling the display of foreground lines.
   function brush() {
+    brushing = "1"
     var actives = [];
     svg_PC.selectAll(".brush")
       .filter(function(d) {
@@ -395,9 +412,10 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
     // Update foreground to only display selected values
     foreground.style("display", function(d) {
         let isActive = actives.every(function(active) {
+            //console.log(active);
             var result
             if(!isAbsolute){
-                console.log(active.extent[0]);
+                //console.log(active.extent[0]);
                 result = active.extent[1] <= d[active.dimension] && d[active.dimension] <= active.extent[0];
             }
             else{
@@ -409,7 +427,8 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         if(isActive) selected.push(d);
         return (isActive) ? null : "none";
     });
-    return selected
+    //console.log(selected);
+    return [selected, actives]
   }
 
 
