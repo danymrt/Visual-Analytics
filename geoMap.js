@@ -11,7 +11,7 @@ var max = 0
 var minMax = 0
 var clickColor = [];                              //keep track of the click on the color of the legend
 var checkLegend = 0;                              //keep track of the click on the legend
-var info_pop = false;
+var show_population = false;                       //Show bubble map
 var path;
 var legend;
 var projection;
@@ -47,10 +47,7 @@ d3.csv('Dataset/cleaned_dataset4.csv')
     });
 
 //Init tooltip
-const tooltip_countries = d3.select("#geoView")
-                            .append("div")
-                            .attr("class", "tooltip")
-                            .style("opacity", 0);
+const tooltip_countries = d3.select("#geoView").append("div").attr("class", "tooltip").style("opacity", 0);
 
 //check event change year
 //updateYears();
@@ -70,12 +67,13 @@ d3.select("#zoom_out").on("click", function() {
 
 function zoomed(){
   svg.selectAll('path').attr('transform', d3.event.transform);
-  svg.selectAll('circle').attr('transform', d3.event.transform);
+  svg.selectAll('.circle_population').attr('transform', d3.event.transform);
 }
 
-d3.select("#continent_zoom").on("click", zoomWorldToContinent);
+//d3.select("#continent_zoom").on("click", zoomWorldToContinent);
 
-function zoomWorldToContinent(){
+//Make zoom from World to Continent
+function zoomWorldToContinent1(){
 
   var continent =[]
    d3.selectAll('.Country')
@@ -115,6 +113,39 @@ function zoomWorldToContinent(){
 
 }
 
+function zoomWorldToContinent(country){
+  d3.csv('Dataset/countries.csv',  function(error,data){
+    data.forEach((item, i) => {
+      if(item.name == 'Fiji'){
+        var p = projection([item.longitude,item.latitude]);
+
+        svg.append("rect")
+              .attr("x",p[0])
+              .attr("y", p[1])
+              .attr('width', 10)
+              .attr("height", 10)
+              .style("stroke", 'red')
+              .style('opacity', 1);
+
+        var centroid = [p[0], p[1]],
+        zoomX = - centroid[0] + 50 ,
+        zoomY = - centroid[1]  + heightMap / 2 - 100 ;
+
+        console.log(zoomX);
+        console.log(zoomY);
+        //africa            [+ 100, 0 ]
+        //america nord      [250, 100 ]
+
+        svg.transition()
+            .duration(750)
+            .call( zoom.transform, d3.zoomIdentity.translate(zoomX,zoomY).scale(1.8) ); // updated for d3 v4
+
+      }
+    });
+  });
+}
+
+//Make zoom from Continet to World
 function zoomContinentToWorld(){
   svg.transition()
       .duration(750)
@@ -211,18 +242,18 @@ function outCountry(d){
 
 //Function for create the Map of the world with TopoJson
 function createMapWorld(topo){
-    console.log(heightMap)
+
   //A projection function takes a longitude and latitude co-ordinate
   //(in the form of an array [lon, lat]) and transforms it into an x and y co-ordinate
   projection = d3.geoNaturalEarth1()
-    .scale((heightMap / 2)-30)    //scale specifies the scale factor of the projection
+    .scale((heightMap / 2)-40)    //scale specifies the scale factor of the projection
     .center([0,20])  //center of projection
     .translate([(widthMap / 2) - 50 , (heightMap / 2)-25]); //where the center of projection is located on the screen
 
   path = d3.geoPath().projection(projection);
 
   // Draw the map
-  svg.append("g")
+  g.append("g")
     .selectAll("path")
     .data(topo.features)
     .enter()
@@ -242,11 +273,11 @@ function createMapWorld(topo){
     .style("stroke", "#273746")
     .style("stroke-width", .1)
     .attr("class", function(d){ return "Country" } )
-    .style("opacity", 1);
-    //.on("click", clicked);
+    .attr('fill', '#797D7F')
+    .style('opacity', 0.7);
 
-    colorMap()
-
+  showPopulation(show_population);
+  colorMap()
 }
 
 //Function for coloring the countries respect the queries
@@ -270,8 +301,6 @@ function colorMap(){
         "Conduct": +d.Conduct,
         "IntellectualDisability": +d.intellectualDisability}; })
     .get(function(error, rows) {
-      var show_population = true;
-      showPopulation(show_population)
 
       mentalDB = d3.nest().key(d => d.code).key(d => d.year).entries(rows);
       mentalDB.forEach((item, i) => {
@@ -315,17 +344,17 @@ function colorMap(){
             .attr('color-disorder', colorScale(value))
             .style("stroke", "#273746")
             .style("stroke-width", .1)
+            .style('opacity', 1)
             .on("mouseover", onCountry )
             .on("mouseleave", outCountry);
         });
-
-      updateLegend(colorScale);
+      updateLegendDisorder(colorScale);
     });
 
 }
 
 //Function for adding and updating legend
-function updateLegend(colorScale){
+function updateLegendDisorder(colorScale){
 
   //Init Legend
   legend = svg.append("g")
@@ -338,14 +367,14 @@ function updateLegend(colorScale){
   //Remove all the part we did befor
   //legend.selectAll("g").remove();
 
-  //Append a rectangle to each element
+  //Append a rectangle
   legend.append("rect")
         .attr("x", 10)
         .attr("y", heightMap - 86)
         .attr("id", "rectLeg")
         .attr("width", widthLegend)
         .attr("height", heightLegend)
-        .style("fill", '#616466')
+        .style("fill", '#B2BABB')
         .style('opacity', 1)
         .attr("rx", 4);
 
@@ -372,9 +401,9 @@ function updateLegend(colorScale){
           })
           .attr("width", size)
           .attr("height", size)
-          .on('mouseover', onLegend)
-          .on('mouseleave', outLegend)
-          .on('click', clickLegend)
+          .on('mouseover', onLegendDisorder)
+          .on('mouseleave', outLegendDisorder)
+          .on('click', clickLegendDisorder)
           .style("fill", function(d){ return colorScale(d[0])})
 
 
@@ -403,7 +432,7 @@ function updateLegend(colorScale){
 
 //TODO: Tasto select all
 //Select only the countries with the selected color
-function clickLegend(){
+function clickLegendDisorder(){
   //Color selected on the legend
   var colorLegend = d3.select(this).style('fill');
 
@@ -459,13 +488,13 @@ function clickLegend(){
     //Color the countries not in the dataset white
     d3.selectAll('.Country')
       .filter(function(d){ return d3.select('#'+d.properties.adm0_a3).attr('fill') == '#797D7F'})
-      .attr('fill', 'white')
+      .attr('fill', '#797D7F')
       .style('opacity', 1);
   }
 }
 
 //Lightning the country with the selected color
-function onLegend(){
+function onLegendDisorder(){
 
   d3.select(this)
     .style('stroke-width', 1);
@@ -483,7 +512,7 @@ function onLegend(){
 }
 
 //Deselect the country with the selected color
-function outLegend(){
+function outLegendDisorder(){
 
     d3.select(this)
       .style('stroke-width', 0.1);
@@ -494,25 +523,27 @@ function outLegend(){
 
 }
 
+//Create bubble map over the map for showing the population
 function showPopulation(show_population){
-
   var setPop = d3.map()
 
+  //Take the info for the selected yaers
   infoDB.forEach((item1, i) => {
       item1.values.forEach((item2, i) => {
-        if(item2.key == "Population, total"){
+        if(item2.key == "Population, total" && item1.key.length!=2){ //We exclude the continent
           setPop.set(item1.key, item2.values[0]["2019"]);
         }
     })
   });
 
-  var max = d3.max(setPop.values());
-  var min = d3.min(setPop.values());
+  var max_pop = d3.max(setPop.values());
+  var min_pop = d3.min(setPop.values());
 
   let sqrtScale = d3.scaleSqrt()
-                    .domain([min, max])
-                    .range([0, 50]);
+                    .domain([min_pop, max_pop])
+                    .range([2, 21]);
 
+  //For each countries we use a dataset with the [lon,lat] of each countries for drawing the circle for the population
   d3.csv('Dataset/countries.csv',  function(error,data){
     data.forEach((item, i) => {
       var p = projection([item.longitude,item.latitude]);
@@ -523,10 +554,11 @@ function showPopulation(show_population){
                 var pop_country = setPop.get(this.id)
                 var r= sqrtScale(pop_country);
 
-              svg.append('g')
+              g.append('g')
                 .append('circle')
                 .attr('cx',p[0])
                 .attr('cy',p[1])
+                .attr('class', 'circle_population')
                 .attr('r', function(d){
                      if(isNaN(r)){
                        return 0;
@@ -536,41 +568,142 @@ function showPopulation(show_population){
                    })
                 .style('opacity', 0.7)
                 .attr('circle_countries', d.properties.name)
+                .attr('number_pop', pop_country)
                 .attr('fill', '#7fbc41')
                 .style("stroke", 'trasparent')
                 .on('mouseover', onCirclePopulation)
                 .on('mouseleave', outCirclePopulation);
               }
             });
-        }else{
-          d3.selectAll('.Country')
-            .each(function(d){
-              if(item.name == d.properties.name){
-                var pop_country = setPop.get(this.id)
-                var r= sqrtScale(pop_country);
-
-              svg.append('circle')
-                .attr('cx',p[0])
-                .attr('cy',p[1])
-                .attr('r', function(d){
-                     if(isNaN(r)){
-                       return 0;
-                     }else{
-                       return r;
-                     }
-                   })
-                .style('opacity', 0.7)
-                .attr('circle_countries', d.properties.name)
-                .attr('fill', 'trasparent')
-                .style("stroke", 'trasparent');
-              }
-            });
+          legendBubble(min_pop, max_pop, sqrtScale);
         }
     });
-  })
+  });
 
 }
 
+//Show and handle the legend of the population
+function legendBubble(min_pop, max_pop, sqrtScale){
+
+  //Init Legend
+  var legend = svg.append("g")
+              .attr("id", "legendBubble");
+
+  var result = [],
+      parts = 5,
+      c = min_pop,
+      delta = (max_pop - min_pop) / (parts - 1);
+  while (c < max_pop) {
+      result.push(c);
+      c += delta;
+  }
+  result.push(max_pop);
+
+  //Append a rectangle
+  legend.append("rect")
+        .attr("x", widthMap - 95)
+        .attr("y", 5)
+        .attr("id", "rectLegPop")
+        .attr("width", 90)
+        .attr("height", 200)
+        .style("fill", '#B2BABB')
+        .style('opacity', 0.8)
+        .attr("rx", 4);
+
+  var legendBox = legend.selectAll("g")
+                        .data(result.sort(d3.descending))
+                        .enter()
+                        .append("g")
+                        .attr("class", "legendBubble");
+
+
+  //Append a rectangle to each element
+  legendBox.append("circle")
+          .attr("cx", widthMap - 65)
+          .attr("cy", function(d, i) {
+               return (i % 5) * 40 - (i*i) + 50;
+          })
+          .attr('value-circle', function(d){ return d;})
+          .attr("r", function(d){ return sqrtScale(d);})
+          .style("fill", '#7fbc41')
+          .style("stroke", 'black')
+          .style("stroke-width", .2)
+          .on('mouseover', function(d){
+            d3.select(this)
+              .style("stroke-width", 1);
+
+
+            d3.selectAll('.circle_population')
+            .nodes()
+            .forEach((item, i) => {
+              var pop = d3.select(item).attr('number_pop');
+              if(d3.select(this).attr('value-circle')==result[0]){
+                if(pop >= result[1]){
+                  d3.select(item)
+                    .style("opacity", 1)
+                    .style("stroke-width", 1.05)
+                    .style("stroke", 'black');
+                }
+              }else if(d3.select(this).attr('value-circle')==result[1]){
+                if(pop < result[1] && pop >= result[2]){
+                  d3.select(item)
+                    .style("opacity", 1)
+                    .style("stroke-width", 1.05)
+                    .style("stroke", 'black');
+                }
+              }else if(d3.select(this).attr('value-circle')==result[2]){
+                if(pop < result[2] && pop >= result[3]){
+                  d3.select(item)
+                    .style("opacity", 1)
+                    .style("stroke-width", 1.05)
+                    .style("stroke", 'black');
+                }
+              }else if(d3.select(this).attr('value-circle')==result[3]){
+                if(pop < result[3] && pop >= result[4]){
+                  d3.select(item)
+                    .style("opacity", 1)
+                    .style("stroke-width", 1.05)
+                    .style("stroke", 'black');
+                }
+              }else{
+                if(pop == result[3] && pop >= result[4]){
+                  d3.select(item)
+                    .style("opacity", 1)
+                    .style("stroke-width", 1.05)
+                    .style("stroke", 'black');
+                }
+              }
+            })
+          })
+          .on('mouseleave', function(){
+            d3.select(this)
+              .style("stroke-width", 0.2);
+              d3.selectAll('.circle_population')
+              .nodes()
+              .forEach((item, i) => {
+                  d3.select(item)
+                    .style("opacity", 0.7)
+                    .style("stroke-width", 0)
+                    .style("stroke", 'trasparent');
+
+              })
+          });
+
+  //Append a text element to each element
+  legendBox.append("text")
+            .attr("x", widthMap - 30)
+            .attr("y", function(d, i) {
+                return (i % 5) * 40 - (i*i) +50 ;
+            })
+            .text('1M');
+
+  legendBox.append("text")
+            .attr("x", widthMap - 90)
+            .attr("y", 20)
+            .text("POPULATION");
+}
+
+//Mouse over circle of bubble map
 function onCirclePopulation(d){
 
   d3.select(this)
@@ -593,6 +726,7 @@ function onCirclePopulation(d){
 
 }
 
+//Muose leaves circle of bubble map
 function outCirclePopulation(){
 
   d3.select(this)

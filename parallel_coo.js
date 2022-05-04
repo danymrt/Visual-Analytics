@@ -13,7 +13,6 @@ var visualization = '1'; //variable that contain the visualization type of the m
 
 function get_continents(data) {
   const data_filtered = []
-  console.log("ciaoooo5");
   for(let i =0 ; i < data.length ; i++){
     //console.log("ciaoooo6");
     //console.log(i);
@@ -71,7 +70,6 @@ function findPopulation(entity, year){
       }
     }
   })
-  console.log("fine");
   console.log(population);
   return population
 }
@@ -84,7 +82,6 @@ function filterbyDisorder(){
 var margin = {top: 50, right: 15, bottom: 15, left: 0},
     width =  document.getElementById("my_dataviz").clientWidth + margin.left + margin.right,   //500 - margin.left - margin.right,
     height = document.getElementById("my_dataviz").clientHeight - margin.top - margin.bottom;    //400 - margin.top - margin.bottom;
-    console.log(height);
 // append the svg object to the body of the page
 var svg = d3.select("#my_dataviz")
           .append("svg")
@@ -93,7 +90,6 @@ var svg = d3.select("#my_dataviz")
 var svg_PC = svg.append("g")
             .attr("transform","translate(" + margin.left + "," + margin.top + ")");
 
-console.log("ciaoooo2");
 
 
 function draw(year,cmd_continent,countries, disorders, isAbsolute ){
@@ -103,7 +99,6 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
   margin = {top: 50, right: 0, bottom: 15, left: 18},
   width = document.getElementById("my_dataviz").clientWidth+ margin.left + margin.right,
   height = document.getElementById("my_dataviz").clientHeight - margin.top - margin.bottom;
-  console.log(height);
   svg = d3.select("#my_dataviz")
         .append("svg")
         .attr("width", width +margin.left + margin.right)
@@ -113,7 +108,6 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
 
   const PCtooltip = d3.select('#PCtooltip');
   d3.text(dataset_path, function(raw){
-    console.log("ciaoooo3");
     var dsv = d3.dsvFormat(',');
     var data = dsv.parse(raw);
 
@@ -205,7 +199,6 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         // metti in rilievo su mappe ,guarda visualization
         name = d.Entity
         if(visualization==1){
-          console.log("prova");
           d3.select("#my_dataviz").selectAll('path').each(function(t){
             //console.log(t);
             d3.select(this).style("stroke-width", "1.5")
@@ -239,15 +232,12 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
           });
         }
         else{
-          console.log("qui1");
           var id =d3.select('#mapContinent').selectAll('path').filter(function(d){
-            console.log("qui2");
             var terName = d3.select('#'+this['id']).attr('name');
             console.log(terName);
             return terName == name;
           });
         }
-        console.log("qui3");
 
         brushed_p=[];
         d3.selectAll('.brushed').each(function(d){
@@ -263,8 +253,7 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         d3.select("#my_dataviz").selectAll('path').each(function(t){
           if( d3.select(this).attr("name") != null){
             if ( (MDS_PC_LOCK && !brushed_p.includes(overed) && d3.select(this).attr("name").trim() == overed)|| (!MDS_PC_LOCK )){
-              d3.select(this).style("stroke", "#2c7bb6")
-              console.log("quiii");
+              d3.select(this).style("stroke", "#2c7bb6");
             }
           }
         })
