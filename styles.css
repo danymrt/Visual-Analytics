@@ -40,12 +40,8 @@ svg {
 #legendBubble {
 	position: absolute;
 	z-index:4;
+	font-size: 0.7em;
 }
-
-.legendBubble rect {
-  fill:white;
-	stroke: black;
-	stroke-width: 0.1;}
 
 
 .btn-group button {

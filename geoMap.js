@@ -11,7 +11,7 @@ var max = 0
 var minMax = 0
 var clickColor = [];                              //keep track of the click on the color of the legend
 var checkLegend = 0;                              //keep track of the click on the legend
-var show_population = false;                       //Show bubble map
+var show_population = true;                       //Show bubble map
 var path;
 var legend;
 var projection;
@@ -598,12 +598,13 @@ function showPopulation(show_population){
     })
   });
 
+  var max = 100000000
   var max_pop = d3.max(setPop.values());
   var min_pop = d3.min(setPop.values());
 
   let sqrtScale = d3.scaleSqrt()
-                    .domain([min_pop, max_pop])
-                    .range([2, 21]);
+                    .domain([min_pop, max])
+                    .range([2, 9]);
 
   //For each countries we use a dataset with the [lon,lat] of each countries for drawing the circle for the population
   d3.csv('Dataset/countries.csv',  function(error,data){
@@ -637,9 +638,11 @@ function showPopulation(show_population){
                 .on('mouseleave', outCirclePopulation);
               }
             });
-          legendBubble(min_pop, max_pop, sqrtScale);
         }
     });
+    if(show_population==true){
+      legendBubble(min_pop, max, sqrtScale);
+    }
   });
 
 }
@@ -663,14 +666,14 @@ function legendBubble(min_pop, max_pop, sqrtScale){
 
   //Append a rectangle
   legend.append("rect")
-        .attr("x", widthMap - 95)
+        .attr("x", widthMap - 120)
         .attr("y", 5)
         .attr("id", "rectLegPop")
-        .attr("width", 90)
+        .attr("width", 105)
         .attr("height", 200)
         .style("fill", '#B2BABB')
         .style('opacity', 0.8)
-        .attr("rx", 4);
+        .attr("rx", 10);
 
   var legendBox = legend.selectAll("g")
                         .data(result.sort(d3.descending))
@@ -681,7 +684,7 @@ function legendBubble(min_pop, max_pop, sqrtScale){
 
   //Append a rectangle to each element
   legendBox.append("circle")
-          .attr("cx", widthMap - 65)
+          .attr("cx", widthMap - 100)
           .attr("cy", function(d, i) {
                return (i % 5) * 40 - (i*i) + 50;
           })
@@ -700,35 +703,35 @@ function legendBubble(min_pop, max_pop, sqrtScale){
             .forEach((item, i) => {
               var pop = d3.select(item).attr('number_pop');
               if(d3.select(this).attr('value-circle')==result[0]){
-                if(pop >= result[1]){
+                if(pop >= result[0]){
                   d3.select(item)
                     .style("opacity", 1)
                     .style("stroke-width", 1.05)
                     .style("stroke", 'black');
                 }
               }else if(d3.select(this).attr('value-circle')==result[1]){
-                if(pop < result[1] && pop >= result[2]){
+                if(pop < result[0] && pop >= result[1]){
                   d3.select(item)
                     .style("opacity", 1)
                     .style("stroke-width", 1.05)
                     .style("stroke", 'black');
                 }
               }else if(d3.select(this).attr('value-circle')==result[2]){
-                if(pop < result[2] && pop >= result[3]){
+                if(pop < result[1] && pop >= result[2]){
                   d3.select(item)
                     .style("opacity", 1)
                     .style("stroke-width", 1.05)
                     .style("stroke", 'black');
                 }
               }else if(d3.select(this).attr('value-circle')==result[3]){
-                if(pop < result[3] && pop >= result[4]){
+                if(pop < result[2] && pop >= result[3]){
                   d3.select(item)
                     .style("opacity", 1)
                     .style("stroke-width", 1.05)
                     .style("stroke", 'black');
                 }
               }else{
-                if(pop == result[3] && pop >= result[4]){
+                if(pop < result[3] && pop >= result[4]){
                   d3.select(item)
                     .style("opacity", 1)
                     .style("stroke-width", 1.05)
@@ -753,16 +756,33 @@ function legendBubble(min_pop, max_pop, sqrtScale){
 
   //Append a text element to each element
   legendBox.append("text")
-            .attr("x", widthMap - 30)
+            .attr("x", widthMap - 85)
             .attr("y", function(d, i) {
-                return (i % 5) * 40 - (i*i) +50 ;
+                return (i % 5) * 40 - (i*i) + 50 ;
             })
-            .text('1M');
+            .text(function(d, i) {
+              if (i == 0) return ">" + nFormatter(Math.round(result[i]),1);
+              return (nFormatter(Math.round(result[i]),1)) + "-" + (nFormatter(Math.round(result[i-1]),1));
+          });
 
   legendBox.append("text")
-            .attr("x", widthMap - 90)
-            .attr("y", 20)
-            .text("POPULATION");
+            .attr("x", widthMap - 108)
+            .attr("y", 25)
+            .text("POPULATION")
+            .style("font-size", "13px");
+}
+
+function nFormatter(num, digits) {
+  const lookup = [
+    { value: 1, symbol: "" },
+    { value: 1e3, symbol: "k" },
+    { value: 1e6, symbol: "M" }
+  ];
+  const rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+  var item = lookup.slice().reverse().find(function(item) {
+    return num >= item.value;
+  });
+  return item ? (num / item.value).toFixed(digits).replace(rx, "$1") + item.symbol : "0";
 }
 
 //Mouse over circle of bubble map
