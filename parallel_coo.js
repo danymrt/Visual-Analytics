@@ -1,21 +1,21 @@
 YEAR = [2019]   //2010,2011,2012,2013,2014,2015,2016,2017,2018,
 CMD_COUNTRIES = "only"
 CMD_CONTINENT = false
-COUNTRIES = ["Algeria","Burundi","Cuba","Italy", "Ireland"]
-DISORDERS = []
+COUNTRIES = ["Algeria","Burundi","Cuba","Italy", "Ireland","Zambia","Zimbabwe"]
+DISORDERS = ["Depressive", "Anxiety", "Bipolar", "Eating", "Schizophrenia", "Attention", "Conduct", "intellectualDisability", "Autism"]
 ABSOLUTE = false
 
 MDS_PC_LOCK = false
 
 //var dataset_path = "/Users/felicemassotti/Desktop/visual/project/General/datasets/Mental_Disorder_with_continent.csv"
-var dataset_path = "Dataset/Mental_Disorder_with_continent.csv";    //Pythonanywhere
+var dataset_path = "./Dataset/Mental_Disorder_with_continent.csv";    //Pythonanywhere
 var visualization = '1'; //variable that contain the visualization type of the moment: =0 =>vis. for countries; =1 => vis. for continent
 var brushing = '0';   //indicates if exists any brush 0->no , 1-> yes
 
 function get_continents(data) {
   const data_filtered = []
   for(let i =0 ; i < data.length ; i++){
-    if(data[i].Code == ""){
+    if(data[i].Code.length == 2){
     //if(data[i].Entity == "Europe"){
       data_filtered.push(data[i])
       console.log(data[i]);
@@ -53,28 +53,62 @@ function filterByYear(year,data){
 
 function findPopulation(entity, year){
   //var dataset_path2 = "/Users/felicemassotti/Desktop/visual/project/General/datasets/cleaned_dataset2.csv"
-  var dataset_path2 = "Dataset/cleaned_dataset4.csv"    //Pythonanywhere
-  var population = 0
+  var dataset_path2 = "./Dataset/cleaned_dataset4.csv"    //Pythonanywhere
+  var population = []
   d3.text(dataset_path2 ,function(data){
     var dsv = d3.dsvFormat(',');
     var data =dsv.parse(data);
     for (var i = 0; i < data.length; i++) {
-      if(data[i]["Country Name"] == entity && data[i]["Series Name"] == "Population, total"){
+      if(data[i].Name == entity && data[i].Series == "Population, total"){
         //2011 [YR2011]
-        population = data[i][year]
-        console.log(population + " " + data[i]["Country Name"] + ":"+ year);
+        year = "year"+year[2]+year[3]
+        population_val = data[i][year]
+        console.log(population_val + " " + data[i].Name + ":"+ year);
         //console.log(data[i].Entity);
         //console.log(data[i].Year);
         //return population;
+        population.push(population_val)
       }
     }
   })
-  console.log(population);
-  return population
+  //console.log(population);
+  //return population
+  return 100000
 }
 
-function filterbyDisorder(){
-//// TODO: draw new paralell
+function filterbyDisorder(flag, disorder, position){
+  svg_PC.selectAll("*").remove();
+  if(flag){
+    DISORDERS.splice(parseInt(position)-1, 0, disorder);
+  }else{
+    index= DISORDERS.indexOf(disorder)
+    DISORDERS.splice(index,1);
+  }
+  draw(YEAR, CMD_CONTINENT,COUNTRIES, DISORDERS, ABSOLUTE)
+}
+
+function changeCmdContinent(flag){
+  svg_PC.selectAll("*").remove();
+  CMD_CONTINENT = flag
+  draw(YEAR, CMD_CONTINENT,COUNTRIES, DISORDERS, ABSOLUTE)
+}
+
+function changeCmdAbsolute(flag){
+  svg_PC.selectAll("*").remove();
+  ABSOLUTE = flag
+  console.log(flag);
+  draw(YEAR, CMD_CONTINENT,COUNTRIES, DISORDERS, ABSOLUTE)
+}
+
+function changeYear(flag, year){
+  svg_PC.selectAll("*").remove();
+  if(flag){
+    YEAR.push(year)
+  }else{
+    index = YEAR.indexOf(year)
+    YEAR.splice(index,1)
+  }
+  draw(YEAR, CMD_CONTINENT,COUNTRIES, DISORDERS, ABSOLUTE)
 }
 
 // set the dimensions and margins of the graph
@@ -88,8 +122,11 @@ var svg = d3.select("#my_dataviz")
           .attr("height", height + margin.top + margin.bottom)
 var svg_PC = svg.append("g")
             .attr("transform","translate(" + margin.left + "," + margin.top + ")");
-
-
+/*
+valore = $('#continent_country option:selected').val()
+valore2 = $('#absolute option:selected').val()
+console.log(valore);
+console.log(valore2);*/
 
 function draw(year,cmd_continent,countries, disorders, isAbsolute ){
   dragging = {}
@@ -112,13 +149,16 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
 
   data = filterByYear(year,data)
   if(cmd_continent){
+    console.log("prendo i continenti");
     data = get_continents(data)
   }else{
     data = filterByCountry(CMD_COUNTRIES, COUNTRIES, data)
   }
-  //console.log("ciaoooo4");
+
    // Extract the list of dimensions we want to keep in the plot. Here I keep all except the column called Species
-  dimensions = d3.keys(data[0]).filter(function(d) { return d !="Index" && d!="Entity" && d!="Code" && d!='Year'})
+  //dimensions = d3.keys(data[0]).filter(function(d) { return d !="Index" && d!="Entity" && d!="Code" && d!='Year'})
+  dimensions = DISORDERS
+  console.log(dimensions);
   // For each dimension, I build a linear scale. I store all in a y object
   var y = {}
   for(i in dimensions){
@@ -129,8 +169,9 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         if(!isAbsolute){ return +d[name];}
         else{
           var population = findPopulation(d["Entity"], d["Year"])
-          console.log(population);
+          //console.log(population);
           r = (d[name]/population) *10000
+          return +r;
         }
       }))
     .range([height, 0])
@@ -231,7 +272,7 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         name =d['Entity'].trim()
         if(visualization==1){
           d3.selectAll(".Country")
-            .style("stroke", "#D7DBDD")
+            .style("stroke", "#273746")
             .style("stroke-width", .2);
         } //// TODO: else visualization==0 for continent
 

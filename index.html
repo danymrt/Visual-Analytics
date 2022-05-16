@@ -14,6 +14,90 @@
 
   <body>
 
+    <!-- Top row-->
+    <div class="row" id="top">
+      <div class="col">
+        <span id="title">MentalHealth Analyzer</span>
+        <div id="selection">
+          <select class="btn_select" name="continent_country" id="continent_country">
+            <option value="continent">Continent</option>
+            <option value="country">Country</option>
+          </select>
+
+          <select class="btn_select" name="absolute" id="absolute">
+            <option value="ABSOLUTE">Total number of disorders</option>
+            <option value="NOABSOLUTE">Disordes each 10k people</option>
+          </select>
+
+          <form id="formDisorders">
+            <div class="multiselect">
+              <div class="selectBox" onclick="showCheckboxes()">
+                <select>
+                  <option>Choose Disorders</option>
+                </select>
+                <div class="overSelect"></div>
+              </div>
+              <div id="checkboxes">
+                <label for="one" class="task">
+                  <input type="checkbox" id="1" value="Depressive" checked>Depressive</label>
+                <label for="two" class="task">
+                  <input type="checkbox" id="2" value="Anxiety" checked>Anxiety</label>
+                <label for="three" class="task">
+                  <input type="checkbox" id="3" value="Bipolar" checked>Bipolar</label>
+                <label for="four" class="task">
+                  <input type="checkbox" id="4" value="Eating" checked>Eating</label>
+                <label for="five" class="task">
+                  <input type="checkbox" id="5" value="Schizophrenia" checked>Schizophrenia</label>
+                <label for="six" class="task">
+                  <input type="checkbox" id="6" value="Attention" checked>Attention</label>
+                <label for="seven" class="task">
+                  <input type="checkbox" id="7" value="Conduct" checked>Conduct</label>
+                <label for="eight" class="task">
+                  <input type="checkbox" id="8" value="intellectualDisability" checked>IntellectualDisability</label>
+                <label for="nine" class="task">
+                  <input type="checkbox" id="9" value="Autism" checked>Autism</label>
+              </div>
+            </div>
+          </form>
+
+
+          <form id="formDisorders">
+            <div class="multiselect2">
+              <div class="selectBox2" onclick="showCheckboxes2()">
+                <select id="Years">
+                  <option id="firstoptions">Years:2019</option>
+                </select>
+                <div class="overSelect"></div>
+              </div>
+              <div id="checkboxes2">
+                <label for="one" class="task">
+                  <input type="checkbox" id="10" value="2010">2010</label>
+                <label for="two" class="task">
+                  <input type="checkbox" id="11" value="2011">2011</label>
+                <label for="three" class="task">
+                  <input type="checkbox" id="12" value="2012">2012</label>
+                <label for="four" class="task">
+                  <input type="checkbox" id="13" value="2013">2013</label>
+                <label for="five" class="task">
+                  <input type="checkbox" id="14" value="2014">2014</label>
+                <label for="six" class="task">
+                  <input type="checkbox" id="15" value="2015">2015</label>
+                <label for="seven" class="task">
+                  <input type="checkbox" id="16" value="2016">2016</label>
+                <label for="eight" class="task">
+                  <input type="checkbox" id="17" value="2017">2017</label>
+                <label for="nine" class="task">
+                  <input type="checkbox" id="18" value="2018">2018</label>
+                <label for="ten" class="task">
+                  <input type="checkbox" id="19" value="2019" checked>2019</label>
+              </div>
+            </div>
+          </form>
+
+        </div>
+
+    </div>
+
 
     <div id="block_container">
       <div id="geoView">
@@ -23,18 +107,32 @@
           <button id="zoom_out"> - </button>
         </div>
       </div>
+      <div id= "barPlot">
+        <svg id='agePlot' ></svg>
+      </div>
+      <div id= "multiLinePlot">
+        <svg id='timePlot' ></svg>
+      </div>
     </div>
+
     <div id= "par-coord">
       <div id="my_dataviz"></div>
     <div>
-
 
     <!--script for Parallel coordinates-->
     <!--<script  src= "/Users/felicemassotti/Desktop/visual/project/General/parallel_coo.js" ></script>-->
     <script type="text/javascript" src="parallel_coo.js"></script>
 
-    <!--Script for the Map-->
+    <!--Script for Map-->
     <script type="text/javascript" src="geoMap.js"></script>
+
+    <!--Script for Stacked Barplot-->
+    <script type="text/javascript" src="stacked_barplot.js"></script>
+
+    <!--Script for MultiLine Plot-->
+    <script type="text/javascript" src="multiLineChart.js"></script>
+
+    <script src="script.js"></script>
 
   </body>
 </html>

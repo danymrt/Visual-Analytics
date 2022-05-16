@@ -9,16 +9,177 @@ html{
 	font-family: "Lucida Console";
 }
 
-/* MAP WORLD */
-#map {
-    background: #202124;
-    position: absolute;
-    height: 55.5%;
-    width: 56.5%;
-  }
 
-svg {
-	position:fixed;
+#block_container{
+	background: blue;
+	height: 51%;
+	right: 0.5%;
+	left: 0.5%;
+	position: absolute;
+	display: flex;
+	justify-content: left;
+}
+
+
+#title {
+  position: relative;
+  margin-top: -15px;
+  font-size: 18px;
+}
+
+#selection{
+	  display:inline-block;
+		margin-left: 130px;
+}
+
+.btn_select{
+  display:inline-block;
+  height:25px;
+  cursor: pointer;
+  padding:0 1.2em;
+  border:0.1em solid #C0C0C0;
+  margin:0 0.3em 0.3em 0;
+  box-sizing: border-box;
+  text-decoration:none;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: #ffffff;
+  text-align:center;
+  transition: all 0.2s;
+  background-color: #282828;
+  border-radius: 25px;
+
+  &:hover {
+    color:#000000;
+    background-color:#FFFFFF;
+  }
+}
+
+#formDisorders{
+	display:inline-block;
+}
+
+.multiselect {
+  width: 200px;
+}
+
+.multiselect2 {
+  display:inline-block;
+}
+
+.selectBox, .selectBox2 {
+  position: relative;
+	margin:0 0.3em 0.3em 0;
+}
+
+.selectBox select {
+  width: 100%;
+  font-weight: bold;
+	height:25px;
+	cursor: pointer;
+	padding:0 1.2em;
+	border:0.1em solid #C0C0C0;
+	margin:0 0.3em 0.3em 0;
+	box-sizing: border-box;
+	text-decoration:none;
+	text-transform: uppercase;
+	font-family: 'Courier New', monospace;
+	font-weight: bold;
+	color: #ffffff;
+	text-align:center;
+	transition: all 0.2s;
+	background-color: #282828;
+	border-radius: 25px;
+}
+
+.selectBox2 select {
+  width: 100%;
+  font-weight: bold;
+	height:25px;
+	cursor: pointer;
+	padding:0 1.2em;
+	border:0.1em solid #C0C0C0;
+	margin:0 0.3em 0.3em 0;
+	box-sizing: border-box;
+	text-decoration:none;
+	text-transform: uppercase;
+	font-family: 'Courier New', monospace;
+	font-weight: bold;
+	color: #ffffff;
+	text-align:center;
+	transition: all 0.2s;
+	background-color: #282828;
+	border-radius: 25px;
+}
+
+
+.overSelect {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+#checkboxes, #checkboxes2 {
+	position: absolute;
+  display: none;
+  border: 1px black solid;
+	z-index: 10;
+}
+#checkboxes2{
+	width: 194.733px;
+}
+
+#checkboxes label,#checkboxes2 label{
+  display: block;
+}
+
+#checkboxes label:hover , #checkboxes2 label:hover {
+  background-color: #1e90ff;
+}
+
+.task{
+	z-index: -10;
+	display:inline-block;
+	width: 100%;
+	height:25px;
+	cursor: pointer;
+	border:0.1em solid #C0C0C0;
+  box-sizing: border-box;
+	font-family: 'Courier New', monospace;
+	font-weight: bold;
+	color: #ffffff;
+	transition: all 0.2s;
+	background-color: #282828;
+}
+/*
+input[type='checkbox'] {
+	display:none;
+	width: 100%;
+}
+
+input[type='checkbox']::after {
+	content: '';
+	width: 100%;
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border: 1px solid #000;
+	border-radius: 100px;
+}*/
+
+/* MAP WORLD */
+
+#map {
+	border:2px solid white;
+  border-style: inset;
+  border-radius: 3px;
+  background: #202124;
+  height: 100%;
+  width: 57.1%;
+	position:absolute;
 	z-index:1;
 }
 
@@ -98,12 +259,13 @@ div.tooltip {
 
 /*PARALLEL COORDINATES*/
 #par-coord{
-  /*border:3px solid black;*/
-  /*border-style: inset;*/
-  /*border-radius: 5px;*/
+	border:2px solid white;
+  border-style: inset;
+  border-radius: 3px;
   background:#202124;
   position: absolute;
   top:57%;
+	left: 0.5%;
   height: 42%;
   width: 56.5%;
 }
@@ -148,4 +310,47 @@ div.tooltip {
 
 .dimension line{
 	stroke: #ffffff
+}
+
+/* Years BarPlot*/
+
+
+#agePlot {
+	border:2px solid white;
+  border-style: inset;
+  border-radius: 3px;
+  background: #202124;
+  height: 49%;
+  width: 42.5%;
+	left: 57.3%;
+	position:absolute;
+	z-index:1;
+}
+
+
+
+.axis line{
+  stroke: white;
+}
+
+.axis path{
+  stroke: white;
+}
+
+.axis text{
+  fill: white;
+}
+
+/* Yars BarPlot*/
+#timePlot{
+		border:2px solid white;
+	  border-style: inset;
+	  border-radius: 3px;
+	  background: #202124;
+	  height: 49%;
+		right: 0.5%;
+		left: 57.3%;
+		top: 50%;
+		position:absolute;
+		z-index:1;
 }
