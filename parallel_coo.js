@@ -1,13 +1,20 @@
-YEAR = [2019]   //2010,2011,2012,2013,2014,2015,2016,2017,2018,
+YEAR = ["2019"]   //2010,2011,2012,2013,2014,2015,2016,2017,2018,
 CMD_COUNTRIES = "only"
 CMD_CONTINENT = false
-COUNTRIES = ["Algeria","Burundi","Cuba","Italy", "Ireland","Zambia","Zimbabwe"]
 DISORDERS = ["Depressive", "Anxiety", "Bipolar", "Eating", "Schizophrenia", "Attention", "Conduct", "intellectualDisability", "Autism"]
-ABSOLUTE = false
+ABSOLUTE = true
+COUNTRIES = [];
 
 MDS_PC_LOCK = false
 
-//var dataset_path = "/Users/felicemassotti/Desktop/visual/project/General/datasets/Mental_Disorder_with_continent.csv"
+var populationDB = []
+
+d3.csv("./Dataset/cleaned_dataset4.csv")
+  .get(function(error, data) {
+    populationDB = data;
+    draw(YEAR, CMD_CONTINENT, COUNTRIES, DISORDERS, ABSOLUTE)
+  })
+
 var dataset_path = "./Dataset/Mental_Disorder_with_continent.csv";    //Pythonanywhere
 var visualization = '1'; //variable that contain the visualization type of the moment: =0 =>vis. for countries; =1 => vis. for continent
 var brushing = '0';   //indicates if exists any brush 0->no , 1-> yes
@@ -16,10 +23,7 @@ function get_continents(data) {
   const data_filtered = []
   for(let i =0 ; i < data.length ; i++){
     if(data[i].Code.length == 2){
-    //if(data[i].Entity == "Europe"){
       data_filtered.push(data[i])
-      console.log(data[i]);
-      //console.log("ciaoooo");
     }
   }
   return data_filtered
@@ -29,7 +33,7 @@ function filterByCountry(command, countries, data){   //command da implementare
   const data_filtered = []
   for(let i = 0; i < data.length ; i++){
     countries.forEach(function(c){
-      if(data[i].Entity == c){
+      if(data[i].Code == c){
         data_filtered.push(data[i])
       }
     })
@@ -42,8 +46,6 @@ function filterByYear(year,data){
   for (let i=0; i < data.length; i++){
     year.forEach(function(y){
       if(data[i].Year == y.toString()){
-        //console.log(data[i].Entity);
-        //console.log(y)
         data_filtered.push(data[i])
       }
     })
@@ -52,28 +54,13 @@ function filterByYear(year,data){
 }
 
 function findPopulation(entity, year){
-  //var dataset_path2 = "/Users/felicemassotti/Desktop/visual/project/General/datasets/cleaned_dataset2.csv"
-  var dataset_path2 = "./Dataset/cleaned_dataset4.csv"    //Pythonanywhere
-  var population = []
-  d3.text(dataset_path2 ,function(data){
-    var dsv = d3.dsvFormat(',');
-    var data =dsv.parse(data);
-    for (var i = 0; i < data.length; i++) {
-      if(data[i].Name == entity && data[i].Series == "Population, total"){
-        //2011 [YR2011]
-        year = "year"+year[2]+year[3]
-        population_val = data[i][year]
-        console.log(population_val + " " + data[i].Name + ":"+ year);
-        //console.log(data[i].Entity);
-        //console.log(data[i].Year);
-        //return population;
-        population.push(population_val)
-      }
+  populationDB.forEach((item, i) => {
+    if(item.Code == entity && item.Series ==  "Population, total"){
+      year = "year"+year[2]+year[3]
+      population_val = item[year]
     }
-  })
-  //console.log(population);
-  //return population
-  return 100000
+  });
+  return population_val
 }
 
 function filterbyDisorder(flag, disorder, position){
@@ -96,7 +83,7 @@ function changeCmdContinent(flag){
 function changeCmdAbsolute(flag){
   svg_PC.selectAll("*").remove();
   ABSOLUTE = flag
-  console.log(flag);
+  ////console.log(flag);
   draw(YEAR, CMD_CONTINENT,COUNTRIES, DISORDERS, ABSOLUTE)
 }
 
@@ -122,13 +109,11 @@ var svg = d3.select("#my_dataviz")
           .attr("height", height + margin.top + margin.bottom)
 var svg_PC = svg.append("g")
             .attr("transform","translate(" + margin.left + "," + margin.top + ")");
-/*
-valore = $('#continent_country option:selected').val()
-valore2 = $('#absolute option:selected').val()
-console.log(valore);
-console.log(valore2);*/
 
 function draw(year,cmd_continent,countries, disorders, isAbsolute ){
+  if(click_countries == 1 || click_zoom_country == 1){
+    countries = selected_countries
+  }
   dragging = {}
   //clean and retrieve measuremenets
   d3.select("#my_dataviz").selectAll("*").remove();
@@ -141,36 +126,34 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         .attr("height", height + margin.top + margin.bottom)
   svg_PC = svg.append("g")
         .attr("transform","translate(" + margin.left + "," + margin.top + ")");
-
   const PCtooltip = d3.select('#PCtooltip');
   d3.text(dataset_path, function(raw){
+    svg_PC.selectAll(".foreground").remove()
+    svg_PC.selectAll(".background").remove()
     var dsv = d3.dsvFormat(',');
     var data = dsv.parse(raw);
-
   data = filterByYear(year,data)
   if(cmd_continent){
-    console.log("prendo i continenti");
     data = get_continents(data)
   }else{
-    data = filterByCountry(CMD_COUNTRIES, COUNTRIES, data)
+    data = filterByCountry(CMD_COUNTRIES, countries, data)
   }
 
    // Extract the list of dimensions we want to keep in the plot. Here I keep all except the column called Species
-  //dimensions = d3.keys(data[0]).filter(function(d) { return d !="Index" && d!="Entity" && d!="Code" && d!='Year'})
   dimensions = DISORDERS
-  console.log(dimensions);
   // For each dimension, I build a linear scale. I store all in a y object
+
   var y = {}
   for(i in dimensions){
     var name = dimensions[i]
     y[name] = d3.scaleLinear()
     //d3.extent  returns the minimum and maximum value in an array, in this case i take from the dataset the i-th feature domain
     .domain(d3.extent(data, function(d){
-        if(!isAbsolute){ return +d[name];}
+        if(!isAbsolute){
+           return +d[name];}
         else{
-          var population = findPopulation(d["Entity"], d["Year"])
-          //console.log(population);
-          r = (d[name]/population) *10000
+          var population = findPopulation(d["Code"], d["Year"])
+          r = (d[name]/population) *100000
           return +r;
         }
       }))
@@ -190,11 +173,10 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
   function path(d){
     return d3.line()(dimensions.map(function(p){
       if(!isAbsolute) {
-        //console.log(p + " "+ d[p]);
         return [x(p), y[p](d[p])];}
       else{
-        population = findPopulation(d["Entity"], d["Year"])
-        return [x(p), y[p]((d[p]/population) *10000)]
+        population = findPopulation(d["Code"], d["Year"])
+        return [x(p), y[p]((d[p]/population) *100000)]
       }
     }));
   }
@@ -204,28 +186,47 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
     .selectAll("path")
     .data(data)
     .enter().append("path")
-    .attr("d", path);
+    .attr("d", path)
+
+  dictionary_code_cluster = []
+  d3.select("#pca-kmeans").selectAll("circle").each(function(d){
+    var key = d3.select(this).attr("id")
+    var value = d3.select(this).style("fill")
+    dictionary_code_cluster[key] = value;
+  })
+
   // Add blue foreground lines for focus
   foreground = svg_PC.append("g")
     .attr("class", "foreground")
     .selectAll("path")
     .data(data)
+    .attr("id", function(d){ return d.Code})
     .enter().append("path")
-    .attr("d", path);
+    .attr("d", path)
+    .style("fill", "none" )
+    .attr("class", "path_parallel")
 
+    svg_PC.selectAll(".path_parallel").style("stroke", function(d1){
+      var c;
+      d3.select("#pca-kmeans").selectAll("circle").each(function(d2){
+        if(d1.Code == d2.Code){
+          c = d3.select(this).style("fill");
+        }
+      })
+      return c
+    })
 
   foreground.attr("name",function(d){return d.Code})
       .on("mouseover", function(d) {
         d3.select(this).raise().classed("active", true);
         d3.select("#my_dataviz").selectAll('path').each(function(t){
           if (d3.select(this).attr("name") != null){
-            if(d.Code.trim() == d3.select(this).attr("name").trim()){
+            if(d.Code.trim() != d3.select(this).attr("name").trim()){
               d3.select(this).raise().classed("active", true);
-              d3.select(this).style("stroke", "#d7191c")
+              d3.select(this).style("stroke", "grey")
             }
           }
         })
-        //d3.select(this).style("stroke", "#d7191c")
         //drawTooltip
         var text = d["Entity"]
         if(YEAR.length>1) text += " " + d["Year"] //Change the content of all tooltip elements:
@@ -236,64 +237,258 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
             .style("position","absolute")
             .style("left", (d3.mouse(this)[0]) + "px")
             .style("top", (d3.mouse(this)[1]+5) + "px");
-        // metti in rilievo su mappe ,guarda visualization
-        name = d.Entity
-        if(visualization==1){
-          d3.selectAll(".Country")
-            .each((item,i) =>{
-              code = d3.select("#"+ item.properties.adm0_a3).attr("id");
-              if(code == d3.select(this).attr("name")){
-                d3.select("#"+item.properties.adm0_a3)
-                  .style("stroke", "black")
-                  .style("stroke-width", 1.05);
+        name = d.Code
+        d3.selectAll(".Country").each((item,i) =>{
+          d3.select("#"+ item.properties.adm0_a3).style("opacity", .5);
+            code_map = d3.select("#"+ item.properties.adm0_a3).attr("id");
+              if(code_map == name){
+                if(visualization==1 && !zoom_cluster  && brushing== '0'){
+                  d3.select("#"+item.properties.adm0_a3)
+                    .style("opacity",1)
+                    .style("stroke", "black")
+                    .style("stroke-width", 1.5);
+                  }else if(zoom_cluster && brushing=='0'){
+                    d3.select("#"+item.properties.adm0_a3)
+                      .style("stroke", "black")
+                      .style("stroke-width", 2);
+                    //code_cluster.style("opacity",.7)
+                    d3.select("#"+item.properties.adm0_a3).style("opacity",1)
+                  }else{
+                    if(d3.select("#"+item.properties.adm0_a3).classed("pc_brushed")== true){
+                      d3.select("#"+item.properties.adm0_a3)
+                            .style("opacity",1)
+                            .style("stroke-width", 1.5)
+                            .style("stroke", "black");
+                    }
+                  }
+                }else if(d3.select("#"+ item.properties.adm0_a3).classed("pc_brushed")== true){
+                  //console.log("iihu");
+                  d3.select("#"+item.properties.adm0_a3)
+                    .style("opacity", 1)
                 }
-              })
+        })
+
+        //HIGHLIGTH MDS POINTS
+        d3.select("#pca-kmeans").selectAll("circle").each(function(d){
+          if(!zoom_cluster){
+            if(name == d3.select(this).attr("id")){
+              d3.select(this).raise().classed("active", true);
+              d3.select(this).attr("r","4")
+              d3.select(this).style("stroke","white")
+              d3.select(this).style("stroke-width", "1")
+            }
+          }else{
+            if(name == d3.select(this).attr("id")){
+              d3.select(this).raise().classed("active", true);
+              d3.select(this).attr("r",4 / transform.k)
+              d3.select(this).style("stroke","white")
+              d3.select(this).style("stroke-width", "1")
+            }
+          }
+        })
+        //HIGHLIGTH Population Bar
+        if(brushing == '0'){
+          if(d3.select("#populationBar_"+d.Code).node() != null){
+            d3.selectAll(".populationBar")
+              .style("opacity", 0.4);
+
+            d3.selectAll("#populationBar_"+d.Code)
+                .style("opacity", 1);
+          }
+
+          if(checkLabelBar == false){
+            d3.selectAll("#populationBarText_"+d.Code)
+                .style("opacity", 1);
+          }
+        }else{
+          if(checkLabelBar == false){
+            d3.selectAll("#populationBarText_"+d.Code)
+                .style("opacity", 1);
+          }
+
+          changeColorAxes_y(name)
         }
-        //// TODO: visualization == 0    //continent
-        /* mette in rilievo su mds
-        brushed_p=[];
-        d3.selectAll('.brushed').each(function(d){brushed_p.push(d)})
-        if(brushed_p.length==0){
-          if(visualization==0) id.style('stroke-width','1.5');
-          else id.style('stroke-width','2');
+        //HIGHLIGTH Sex Bar
+        if(brushing == '0'){
+          if(d3.select("#SexBar_"+d.Code).node() != null){
+            d3.selectAll(".SexBar")
+              .style("opacity", 0.3);
+
+            d3.selectAll("#SexBar_"+d.Code)
+                .style("opacity", 1);
+          }
+        }else{
+          d3.selectAll("#SexBar_"+d.Code)
+                changeColorAxes_x(name)
         }
-        else if(brushed_p.includes(id.attr('name') ) ){
-          oldSt=id.style('stroke');
-          id.style('stroke','blue');
+        //HIGHLIGTH GDP line
+        if(brushing == '0'){
+          d3.selectAll(".lineGDP").each(function(d){
+            if(name != d.key){
+              d3.select(this).style("opacity", 0.2);
+            }
+          })
+          d3.selectAll(".circleGDP").each(function(d){
+            if(name != d.code){
+              d3.select(this).style("opacity", 0.2);
+            }
+          })
+        }else{
+          d3.selectAll(".lineGDP").each(function(d){
+            if(name == d.key){
+              d3.select(this)
+                .style("stroke-width", 0.8)
+                .style("stroke", "red");
+            }
+          })
+          d3.selectAll(".circleGDP").each(function(d){
+            if(name == d.code){
+              d3.select(this)
+                .style("stroke-width", 0.8)
+                .style("stroke", "red");
+            }
+          })
         }
-        else{
-          id.style('stroke-width','1.5');
-        }*/
+
+        d3.select("#chart").selectAll("rect").each(function(d){
+          if(name == d3.select(this).attr("id")){
+            d3.select(this).style("fill", "#6F257F")
+          }
+        })
 
       })
       .on("mouseout", function(d) {
         //removeTooltip
         d3.selectAll('.PCtooltip').style('display', 'none')
         name =d['Entity'].trim()
-        if(visualization==1){
+        if(click_countries == 0 && !zoom_cluster && brushing=="0"){
+          d3.selectAll(".Country")
+              .style("stroke", "#273746")
+              .style("stroke-width", .1)
+              .style("opacity", 1);
+        }else if(zoom_cluster && brushing=='0'){
+          code_cluster.style("opacity",'1')
+                      .style("stroke", "#273746")
+                      .style("stroke-width", .1);
+
+          code_Notcluster.style("opacity",'0.5')
+        }else{
           d3.selectAll(".Country")
             .style("stroke", "#273746")
-            .style("stroke-width", .2);
-        } //// TODO: else visualization==0 for continent
+            .style("stroke-width", .1);
+        }
+
+        if(click_countries != 0){
+          if(brushing == "0"){
+            selected_countries.forEach((item, i) => {
+              d3.select("#"+item)
+              .style('opacity', 1);
+            });
+          }
+        }
+
+        if(click_zoom_country == 1){
+          code_cluster.style("stroke", "black")
+                      .style("stroke-width",  .1);
+          code_Notcluster
+              .style("opacity",'0.5')
+              .style("stroke", "#273746")
+              .style("stroke-width", .1);
+          selected_countries.forEach((item, i) => {
+            d3.select("#"+item)
+            .style('stroke', "black")
+            .style("stroke-width", 1.8);
+          });
+        }
 
         brushed_p=[];
         d3.selectAll('.brushed').each(function(d){
           brushed_p.push(d.trim())
         })
-        //if(brushed_p.length==0) id.style('stroke-width','0.5');
-        //if(brushed_p.includes(id.attr('name').trim() ) ){
-        //  id.style('stroke',oldSt);
-        //}
-        //else{
-        //  id.style('stroke-width','0.5');
-        //}
-        d3.select("#my_dataviz").selectAll('path').each(function(t){
-          if( d3.select(this).attr("name") != null){
-            if ( (MDS_PC_LOCK && !brushed_p.includes(overed) && d3.select(this).attr("name").trim() == overed)|| (!MDS_PC_LOCK )){
-              d3.select(this).style("stroke", "#2c7bb6");
+
+        //Color white name country
+        d3.select("#y_stacked_axis")
+          .selectAll("text")
+          .style("fill", function(d){
+            return "white";
+          })
+
+         d3.select("#x_stacked_axis")
+           .selectAll("text")
+           .style("fill", function(d){
+              return "white";
+          })
+
+        svg_PC.selectAll(".path_parallel").style("stroke", function(d1){
+          var c;
+          d3.select("#pca-kmeans").selectAll("circle").each(function(d2){
+            if(d1.Code == d2.Code){
+              c = d3.select(this).style("fill");
+            }
+          })
+          return c
+        })
+        //DE-HIGHLIGTH MDS POINTS
+        d3.select("#pca-kmeans").selectAll("circle").each(function(d){
+          if(!zoom_cluster){
+            if(d3.select(this).classed("pc_brushed") == false && brushing=='1'){
+              d3.select(this).attr("r","4")
+              d3.select(this).style("stroke-width", "0")
+            }else{
+              d3.select(this).attr("r","2")
+              d3.select(this).style("stroke-width", "0")
+            }
+          }else{
+            if(d3.select(this).classed("pc_brushed") == false && brushing=='1'){
+              d3.select(this).attr("r",4 / transform.k)
+              d3.select(this).style("stroke-width", "0")
+            }else{
+              d3.select(this).attr("r",2 / transform.k)
+              d3.select(this).style("stroke-width", "0")
             }
           }
         })
+
+        //DE-HIGHLIGTH Population Bar
+        if(brushing == '0'){
+        d3.selectAll(".populationBar")
+          .style("opacity", 1);
+        }
+        if(checkLabelBar == false){
+            d3.selectAll("#populationBarText_"+d.Code)
+                .style("opacity", 0);
+        }
+
+        //DE-HIGHLIGTH Sex Bar
+        if(brushing == '0'){
+          d3.selectAll(".SexBar")
+            .style("opacity", 1);
+        }else{
+          d3.selectAll(".SexBar")
+          .style("stroke-width", 0);
+        }
+
+          //DE-HIGHLIGTH GDP line
+          if(brushing == '0'){
+            d3.selectAll(".lineGDP")
+              .style("opacity", 1);
+            d3.selectAll(".circleGDP")
+              .style("opacity", 1);
+          }else{
+            d3.selectAll(".lineGDP")
+              .style("stroke-width", 1.5)
+              .style("stroke", "#bcbcbc");
+            d3.selectAll(".circleGDP")
+              .style("stroke-width", 1)
+              .style("stroke", "#bcbcbc");
+          }
+
+          code = d.Code
+          d3.select("#chart").selectAll("rect").each(function(d){
+            if(code == d3.select(this).attr("id")){
+              d3.select(this).style("fill", "#bcbcbc")
+            }
+          })
       })
 
   // Add a group element for each dimension.
@@ -328,33 +523,6 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         }));
 
 
-/*
- // Draw the lines
- svg_PC
-   .selectAll("myPath")
-   .data(data)
-   .enter().append("path")
-   .attr("d",  path)
-   .style("fill", "none")
-   .style("stroke", "#69b3a2")
-   .style("opacity", 0.5)
- // Draw the axis:
- svg_PC .selectAll("myAxis")
-  // For each dimension of the dataset I add a 'g' element:
-  .data(dimensions).enter()
-  .append("g")
-  // I translate this element to its right position on the x axis
-  .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
-  // And I build the axis with the call function
-  .each(function(d) { d3.select(this).call(d3.axisLeft().scale(y[d])); })
-  // Add axis title
-  .append("text")
-    .style("text-anchor", "middle")
-    .attr("y", -9)
-    .text(function(d) { return d; })
-    .style("fill", "black")*/
-
-
   // Add an axis and title.
   g.append("g")
     .attr("class", "axis")
@@ -378,63 +546,168 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
     .attr("x", -8)
     .attr("width", 16);
 
-  function brush_end() {
-    var all_brushed = true
-    var brush_result = brush()
-    var brushedEntity= brush_result[0];
-    var entity = []
-    brushedEntity.forEach( n => entity.push(n.Code.trim()) )
-    if(visualization==0){
-      var idNotBrush =d3.select('#mapCountry').selectAll('path').filter(function(d){
-          return !entity.includes( d3.select('#'+this['id']).attr('name') );
-      });
-      var idBrush =d3.select('#mapCountry').selectAll('path').filter(function(d){
-           return entity.includes( d3.select('#'+this['id']).attr('name') );
-      });
-    }
-    else{
-      var idNotBrush =d3.selectAll('.Country').filter(function(d){
-        //console.log("idNotBrush: "+ d3.select('#'+d.properties.adm0_a3).attr('id'));
-        return !entity.includes( d3.select('#'+d.properties.adm0_a3).attr('id') );
-       });
-      var idBrush =d3.selectAll('.Country').filter(function(d){
-        //console.log("idBrush: "+ d3.select('#'+d.properties.adm0_a3).attr('id'));
-        return entity.includes( d3.select('#'+d.properties.adm0_a3).attr('id') );
-      });
-    }
-    idNotBrush.style('opacity','0.5');
-    idBrush.style('opacity','1');
-    //for MDS
-    d3.select("#countries").selectAll("circle").each(function(d){
-      if(!entity.includes(d)){
-        d3.select(this).classed("pc_brushed", true)
+    function brush_end() {
+      var all_brushed = true
+      var brush_result = brush()
+      var brushedEntity= brush_result[0];
+      var entity = []
+      brushedEntity.forEach( n => entity.push(n.Code.trim()) )
+      if(visualization==0){
+        var idNotBrush =d3.select('#mapCountry').selectAll('path').filter(function(d){
+            return !entity.includes( d3.select('#'+this['id']).attr('name') );
+        });
+        var idBrush =d3.select('#mapCountry').selectAll('path').filter(function(d){
+             return entity.includes( d3.select('#'+this['id']).attr('name') );
+        });
       }
-      if(entity.includes(d)){
-        d3.select(this).classed("pc_brushed", false);
+      else{
+        var idNotBrush =d3.selectAll('.Country').filter(function(d){
+          //////console.log("idNotBrush: "+ d3.select('#'+d.properties.adm0_a3).attr('id'));
+          return !entity.includes( d3.select('#'+d.properties.adm0_a3).attr('id') );
+         });
+        var idBrush =d3.selectAll('.Country').filter(function(d){
+          ////console.log("idBrush: "+ d3.select('#'+d.properties.adm0_a3).attr('id'));
+          return entity.includes( d3.select('#'+d.properties.adm0_a3).attr('id') );
+        });
       }
-    })
+      idNotBrush.style('opacity','0.5')
+                .classed("pc_brushed", false)
+                .style("stroke", "#273746")
+                .style("stroke-width", .1);
 
-    //if all brush have been removed and there are no actives restore all countries
-    d3.select("#my_dataviz").selectAll("path").each(function(t){
-      if(d3.select(this).attr("name")!= null){
-        if(!entity.includes(d3.select(this).attr("name"))){
-          all_brushed = false
+      idBrush.style('opacity','1')
+             .style("stroke", "#273746")
+             .style("stroke-width", .1)
+             .classed("pc_brushed", true);
+      //for Tsne
+      d3.select("#pca-kmeans").selectAll("circle").each(function(d){
+        if(!entity.includes(d3.select(this).attr('id'))){
+          d3.select(this).classed("pc_brushed", true)
+        }
+        if(entity.includes( d3.select(this).attr('id'))){
+          d3.select(this).classed("pc_brushed", false);
+        }
+      })
+      var idNotBrush_tsne =d3.select("#pca-kmeans").selectAll('circle').filter(function(d){
+        return !entity.includes( d3.select(this).attr('id') );
+       });
+      var idBrush_tsne =d3.select("#pca-kmeans").selectAll('circle').filter(function(d){
+        return entity.includes( d3.select(this).attr('id') );
+      })
+      idNotBrush_tsne.style('opacity','0.3');
+      idBrush_tsne.style('opacity','1')
+      if(!zoom_cluster){
+        idBrush_tsne.raise().classed("active", true)
+                    .attr("r","4");
+      }else{
+        idBrush_tsne.raise().classed("active", true)
+                    .attr("r",4 / transform.k);
+      }
+      //for Plot Population
+      var idNotBrush_pop =d3.select("#popPlot").selectAll('.populationBar').filter(function(d){
+        return !entity.includes(d.data.code );
+       });
+      var idBrush_pop =d3.select("#popPlot").selectAll('.populationBar').filter(function(d){
+        return entity.includes( d.data.code );
+       })
+      idNotBrush_pop.style('opacity','0.4');
+      idNotBrush_pop.classed("pc_brushed", false)
+      idBrush_pop.style('opacity','1');
+      idBrush_pop.classed("pc_brushed", true)
+
+      //for Plot Ages
+      var idNotBrush_sex =d3.select("#sexPlot").selectAll('.SexBar').filter(function(d){
+        return !entity.includes(d.code );
+       });
+      var idBrush_sex =d3.select("#sexPlot").selectAll('.SexBar').filter(function(d){
+        return entity.includes( d.code );
+       })
+      idNotBrush_sex.style('opacity','0.3');
+      idBrush_sex.style('opacity','1');
+      idBrush_sex.classed("pc_brushed", true)
+
+      // for Plot GDP
+      var idNotBrush_gdp =d3.select("#timePlot").selectAll('.lineGDP').filter(function(d){
+        return !entity.includes(d.key );
+       });
+      var idBrush_gdp =d3.select("#timePlot").selectAll('.lineGDP').filter(function(d){
+        return entity.includes( d.key);
+       })
+       var idNotBrush_gdp_circle =d3.select("#timePlot").selectAll('.circleGDP').filter(function(d){
+         return !entity.includes(d.code);
+        });
+       var idBrush_gdp_circle =d3.select("#timePlot").selectAll('.circleGDP').filter(function(d){
+         return entity.includes(d.code);
+        })
+      idNotBrush_gdp.style('opacity','0.2');
+      idBrush_gdp.style('opacity','1');
+      idNotBrush_gdp_circle.style('opacity','0.2');
+      idBrush_gdp_circle.style('opacity','1');
+      idBrush_gdp.classed("pc_brushed", true)
+      idBrush_gdp_circle.classed("pc_brushed", true)
+
+      //if all brush have been removed and there are no actives restore all countries
+      d3.select("#my_dataviz").selectAll(".SexBar").each(function(t){
+        if(d3.select(this).attr("name")!= null){
+          if(!entity.includes(d3.select(this).attr("name"))){
+            all_brushed = false
+          }
+        }
+      })
+      actives = brush_result[1]
+      if(all_brushed && actives.length==0){
+        brushing = "0"
+        idNotBrush.style('opacity','1');
+        idBrush.style('opacity','1');
+        idNotBrush_tsne.style('opacity','1');
+        delete_brush()
+        if(click_zoom_country == 1){
+          code_cluster.style("stroke", "black")
+                      .style("stroke-width",  .1);
+          code_Notcluster
+              .style("opacity",'0.5')
+              .style("stroke", "#273746")
+              .style("stroke-width", .1);
+          selected_countries.forEach((item, i) => {
+            d3.select("#"+item)
+            .style('stroke', "black")
+            .style("stroke-width", 1.8);
+          });
+        }
+        if(click_countries == 1){
+          d3.selectAll(".Country").style('opacity', 0.5);
+          selected_countries.forEach((item, i) => {
+            d3.select("#"+item)
+            .style('opacity', 1);
+          });
+        }
+        if(!zoom_cluster){
+          idBrush_tsne.style('opacity','1')
+                      .raise().classed("active", false)
+                      .attr("r","2");
+        }else{
+          idBrush_tsne.style('opacity','1')
+                      .raise().classed("active", false)
+                      .attr("r",2 / transform.k);
+
+
+          code_Notcluster.style("opacity",'0.5')
         }
       }
-    })
-    actives = brush_result[1]
-    if(all_brushed && actives.length==0){
-      brushing = "0"
-      idNotBrush.style('opacity','1');
-      idBrush.style('opacity','1');
+
     }
 
-  }
 
   // Handles a brush event, toggling the display of foreground lines.
   function brush() {
     brushing = "1"
     var actives = [];
+    d3.selectAll('.Country').classed("pc_brushed",false)
+    d3.select("#popPlot").selectAll('.populationBar').classed("pc_brushed",false)
+    d3.select("#sexPlot").selectAll('.SexBar').classed("pc_brushed",false)
+    d3.select("#timePlot").selectAll('.lineGDP').classed("pc_brushed",false)
+    d3.select("#timePlot").selectAll('.circleGDP').classed("pc_brushed",false)
+    d3.select("#pca-kmeans").selectAll("circle").classed("pc_brushed", true)
     svg_PC.selectAll(".brush")
       .filter(function(d) {
             y[d].brushSelectionValue = d3.brushSelection(this);
@@ -453,14 +726,15 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
     // Update foreground to only display selected values
     foreground.style("display", function(d) {
         let isActive = actives.every(function(active) {
-            //console.log(active);
+            ////console.log(active);
             var result
             if(!isAbsolute){
-                //console.log(active.extent[0]);
+                ////console.log(active.extent[0]);
                 result = active.extent[1] <= d[active.dimension] && d[active.dimension] <= active.extent[0];
             }
             else{
-                result = active.extent[1] <= (d[active.dimension]/population)*10000 && (d[active.dimension]/population)*10000 <= active.extent[0];
+                population = findPopulation(d["Code"], d["Year"])
+                result = active.extent[1] <= (d[active.dimension]/population)*100000 && (d[active.dimension]/population)*100000 <= active.extent[0];
             }
             return result;
         });
@@ -468,7 +742,7 @@ function draw(year,cmd_continent,countries, disorders, isAbsolute ){
         if(isActive) selected.push(d);
         return (isActive) ? null : "none";
     });
-    //console.log(selected);
+    ////console.log(selected);
     return [selected, actives]
   }
 
@@ -484,5 +758,3 @@ function position(d) {
 function transition(g) {
   return g.transition().duration(500);
 }
-
-draw(YEAR, CMD_CONTINENT, COUNTRIES, DISORDERS, ABSOLUTE)

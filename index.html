@@ -9,6 +9,7 @@
 <!-- D3.js -->
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
 <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://unpkg.com/d3-simple-slider"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
 
@@ -19,17 +20,13 @@
       <div class="col">
         <span id="title">MentalHealth Analyzer</span>
         <div id="selection">
-          <select class="btn_select" name="continent_country" id="continent_country">
-            <option value="continent">Continent</option>
-            <option value="country">Country</option>
-          </select>
 
-          <select class="btn_select" name="absolute" id="absolute">
+          <select class="btn_select" name="absolute" id="absolute" autocomplete="off">
+            <option value="NOABSOLUTE">Disordes each 100k people</option>
             <option value="ABSOLUTE">Total number of disorders</option>
-            <option value="NOABSOLUTE">Disordes each 10k people</option>
           </select>
 
-          <form id="formDisorders">
+          <form id="formDisorders" autocomplete="off">
             <div class="multiselect">
               <div class="selectBox" onclick="showCheckboxes()">
                 <select>
@@ -59,45 +56,16 @@
               </div>
             </div>
           </form>
-
-
-          <form id="formDisorders">
-            <div class="multiselect2">
-              <div class="selectBox2" onclick="showCheckboxes2()">
-                <select id="Years">
-                  <option id="firstoptions">Years:2019</option>
-                </select>
-                <div class="overSelect"></div>
-              </div>
-              <div id="checkboxes2">
-                <label for="one" class="task">
-                  <input type="checkbox" id="10" value="2010">2010</label>
-                <label for="two" class="task">
-                  <input type="checkbox" id="11" value="2011">2011</label>
-                <label for="three" class="task">
-                  <input type="checkbox" id="12" value="2012">2012</label>
-                <label for="four" class="task">
-                  <input type="checkbox" id="13" value="2013">2013</label>
-                <label for="five" class="task">
-                  <input type="checkbox" id="14" value="2014">2014</label>
-                <label for="six" class="task">
-                  <input type="checkbox" id="15" value="2015">2015</label>
-                <label for="seven" class="task">
-                  <input type="checkbox" id="16" value="2016">2016</label>
-                <label for="eight" class="task">
-                  <input type="checkbox" id="17" value="2017">2017</label>
-                <label for="nine" class="task">
-                  <input type="checkbox" id="18" value="2018">2018</label>
-                <label for="ten" class="task">
-                  <input type="checkbox" id="19" value="2019" checked>2019</label>
-              </div>
-            </div>
-          </form>
-
         </div>
-
+        <p id = "text_sel">Select Years:</p>
+        <div class="col-sm">
+          <div>
+          </div>
+          <div id="slider-range"></div>
+          <button class="btn_select2" id="reset">Reset All</button>
+        </div>
     </div>
-
+  </div>
 
     <div id="block_container">
       <div id="geoView">
@@ -106,18 +74,86 @@
           <button id="zoom_in"> + </button>
           <button id="zoom_out"> - </button>
         </div>
+        <div class="btn-group-legend">
+        </div>
       </div>
       <div id= "barPlot">
-        <svg id='agePlot' ></svg>
+        <svg id='popPlot' ></svg>
+        <label id="showLabel">
+          <input type="checkbox" id="label_pop" autocomplete="off"/>
+          <span class = "checkbox"></span>
+          <span id="labelcheck">Label</span>
+        </label>
+        <select class="btn_select2" name="cluster" id="orderBy" autocomplete="off">
+          <option value="disorders">Disorders</option>
+          <option value="pop">Population</option>
+          <option value="pop00_14">00-14</option>
+          <option value="pop15_64">15-64</option>
+          <option value="pop65_100">> 65</option>
+        </select>
       </div>
-      <div id= "multiLinePlot">
+      <div id= "multiLineTimePlot">
         <svg id='timePlot' ></svg>
+      </div>
+      <div id= "multiLineBarPlot">
+        <svg id='sexPlot' ></svg>
+      </div>
+      <div id ="chart">
       </div>
     </div>
 
     <div id= "par-coord">
       <div id="my_dataviz"></div>
-    <div>
+    </div>
+
+    <div id= "pca-kmeans">
+      <div id="scatter_plot">
+        <div id="loader" class="lds-roller" style="display:none"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+      </div>
+      <div id ="option_filter">
+        <select class="btn_select2" name="cluster" id="select_cluster" autocomplete="off">
+          <option value="0">Clusters</option>
+          <option value="1">Cluster 1</option>
+          <option value="2">Cluster 2</option>
+          <option value="3">Cluster 3</option>
+          <option value="4">Cluster 4</option>
+        </select>
+        <div id="table_clusters"></div>
+        <p id="choose_clusters">#Clusters:</p>
+        <select class="btn_select3" id="number_clusters" autocomplete="off">
+            <option value="3">3</option>
+            <option value="4" selected="selected">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+        </select>
+        <p id="choose_sex">Sex: </p>
+        <select class="btn_select3" id="cluster_sex" autocomplete="off">
+          <option value="Both">Both</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+        </select>
+        <p id="choose_pop">Pop Ages: </p>
+        <form id="formDisorders2" autocomplete="off">
+              <div class="multiselect3">
+                <div class="selectBox3" onclick="showCheckboxes3()">
+                  <select>
+                    <option>Ages</option>
+                  </select>
+                  <div class="overSelect"></div>
+                </div>
+                <div id="checkboxes3">
+                  <label for="one" class="task">
+                    <input type="checkbox" id="1" value="00-14" checked>00-14</label>
+                  <label for="two" class="task">
+                    <input type="checkbox" id="2" value="15-64" checked>15-64</label>
+                  <label for="three" class="task">
+                    <input type="checkbox" id="3" value="65-100" checked>>65</label>
+                </div>
+              </div>
+            </form>
+        <button class="btn_select2" id="run_kmeans"> Compute </button>
+      </div>
+    </div>
 
     <!--script for Parallel coordinates-->
     <!--<script  src= "/Users/felicemassotti/Desktop/visual/project/General/parallel_coo.js" ></script>-->
@@ -127,10 +163,18 @@
     <script type="text/javascript" src="geoMap.js"></script>
 
     <!--Script for Stacked Barplot-->
-    <script type="text/javascript" src="stacked_barplot.js"></script>
+    <script type="text/javascript" src="StackedAge.js"></script>
 
-    <!--Script for MultiLine Plot-->
+    <!--Script for MultiLine Time Plot-->
     <script type="text/javascript" src="multiLineChart.js"></script>
+
+    <!--Script for MultiLine Age BarPlot-->
+    <script type="text/javascript" src="multibarSex.js"></script>
+
+    <!--Script for Cluster plot-->
+    <script type="text/javascript" src="cluster_plot.js"></script>
+
+    <script type="text/javascript" src="countryBarChart.js"></script>
 
     <script src="script.js"></script>
 

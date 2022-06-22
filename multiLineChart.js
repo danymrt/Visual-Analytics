@@ -2,109 +2,56 @@
 var widthTime =  document.getElementById("timePlot").clientWidth,
     heightTime = document.getElementById("timePlot").clientHeight;
 
-var xScaleYears;
-var yScaleGDP;
+var xScaleYears, parseTime,yScaleGDP;
 
 // append the svgBar object to the body of the page
 var svgTime = d3.select("#timePlot")
-          .attr("width", widthBar)
-          .attr("height", heightBar);
+          .attr("width", widthTime)
+          .attr("height", heightTime);
 
-//Get the dataBase
-/*
-d3.csv('Dataset/cleaned_dataset4.csv')
-  .row(function(d){
-    return {"code": d.Code,
-        "series": d.Series,
-        "name": d.Name,
-        "y_2010": +d.year10,
-        "y_2011": +d.year11,
-        "y_2012": +d.year12,
-        "y_2013": +d.year13,
-        "y_2014": +d.year14,
-        "y_2015": +d.year15,
-        "y_2016": +d.year16,
-        "y_2017": +d.year17,
-        "y_2018": +d.year18,
-        "y_2019": +d.year19};})
-  .get(function(error, rows) {
-    createMultilinePlot(rows);
-  });*/
 
-  d3.csv('Dataset/socio_economicDB.csv')
-  .row(function(d){
-    return {"year": d.Year,
-        "code": d.Code,
-        "name": d.Name,
-        "gdp": +d['Current health expenditure'],
-        "population": +d["Population, total"],
-        "pop15_64": +d['Population ages 15-64, total'],
-        "pop00_14": +d["Population ages 00-14, total"],
-        "pop65_100": +d["Population ages 65 and above, total"],
-        "rural": +d["Rural population"],
-        "urban": +d["Urban population"]};})
-    .get(function(error, rows) {
-      console.log(rows);
-      createMultilinePlot(rows);
+function createMultilinePlot(countries){
+
+  if(click_countries == 1 || click_zoom_country == 1){
+    countries = selected_countries
+  }
+
+    svgTime.selectAll('g').remove();
+    svgTime.selectAll(".lineGDP").remove();
+    svgTime.selectAll(".circleGDP").remove();
+
+
+    var groupDataTime = rows_socioDB.filter(function(d){
+      if(countries.includes(d.code)){
+          return d.code ;
+      }
     });
-
-function createMultilinePlot(dataDB){
-
-    //var group = rows.filter(function(d){
-    //  return d.series == "Current health expenditure (% of GDP)" && d.code.length == 2;
-    //})
-    /*
-    var x_data = []
-    var dataYears = []
-
-    rows.forEach((item, i) => {
-
-    });
-
-
-    group.forEach((item1, i) => {
-      d3.entries(item1).forEach((item2, i) => {
-        if(item2.key.includes("_")){
-          var s = item2.key.split("_")[1]
-          dataYears.push({code: item1.code, name:item1.name, year: s, n: item2.value})
-          x_data.push(item2.value)
-        }
-      })
-    });
-
-    console.log(x_data);*/
-
-    dataDB =  dataDB.filter(function(d){
-      return d.code.length == 2;
-    })
 
     //format the year
-    var parseTime = d3.timeParse("%Y");
-
-
-    dataDB.forEach(function (d) {
-        d.year = parseTime(d.year);
-    });
+    parseTime = d3.timeParse("%Y");
 
     //scale xAxis
-    var xExtent = d3.extent(dataDB, d => d.year);
+    var xExtent = d3.extent(groupDataTime, d => parseTime(d.year));
     xScaleYears = d3.scaleTime()
-                        .domain(xExtent)
-                        .range([0, widthBar - 60]);
+                    .domain(xExtent)
+                    .range([0, widthTime - widthTime/9]);
 
     //scale yAxis
-    var yMax= d3.max(dataDB,d=>d.gdp)
+    var yMax= d3.max(groupDataTime,d=>d.gdp)
     yScaleGDP = d3.scaleLinear()
-                      .domain([d3.min(dataDB,d=>d.gdp), d3.max(dataDB,d=>d.gdp)]).nice()
-                      .range([heightBar - 48, 0])
+                      .domain([0, d3.max(groupDataTime,d=>d.gdp)]).nice()
+                      .range([heightTime - 48, 0])
+
 
     //draw xAxis and xAxis label
     xAxisYears = d3.axisBottom()
                   .scale(xScaleYears)
+                  .tickFormat(d3.timeFormat("%Y"));
 
     svgTime.append("g")
           .attr("class", "axis")
-          .attr("transform", "translate(48," + (heightBar -25) + ")")
+          .attr("id", "axisGDP")
+          .attr("transform", "translate(48," + (heightTime -25) + ")")
           .call(xAxisYears)
 
     //yAxis and yAxis label
@@ -113,6 +60,7 @@ function createMultilinePlot(dataDB){
 
     svgTime.append("g")
             .attr("class", "axis")
+            .attr("id", "axisGDP")
             .attr("transform", "translate(48, 25)") //use variable in translate
             .call(yAxisGDP)
             .append("text")
@@ -122,14 +70,13 @@ function createMultilinePlot(dataDB){
             .attr("fill", "white")
             .attr("font-weight", "bold")
             .attr("text-anchor", "start")
-            .text("% of GDP");
+            .text("Current health expenditure (% of GDP)");
 
     //use .nest()function to group data so the line can be computed for each group
     var sumData = d3.nest()
                   .key(d => d.code)
-                  .entries(dataDB);
+                  .entries(groupDataTime);
 
-    //select path - three types: curveBasis,curveStep, curveCardinal
     svgTime.selectAll(".line")
             .append("g")
             .data(sumData)
@@ -137,153 +84,490 @@ function createMultilinePlot(dataDB){
             .append("path")
             .attr("d", function (d) {
                 return d3.line()
-                .x(d => xScaleYears(d.year))
+                .x(d => xScaleYears(parseTime(d.year)))
                 .y(d => yScaleGDP(+d.gdp)).curve(d3.curveCardinal)
                   (d.values)
             })
             .attr("class", "lineGDP")
-            .attr("id", function(d){return d.values[0].name+"_line";})
+            .attr("id", function(d){return d.key+"_lineGDP";})
             .attr("name", function(d){return d.values[0].name;})
             .attr("fill", "none")
-            .attr("stroke", "white")
+            .attr("stroke", "#bcbcbc")
             .attr("stroke-width", 1.5 )
             .attr("opacity", "0.8")
             .attr("transform", "translate(48, 25)")
             .on("mouseover", onLineGDP)
             .on("mouseout", outLineGDP);
 
-      //append circle
-      svgTime.selectAll("circle")
+      //Append circle
+      var createCircle = function(){
+          svgTime.selectAll(".circleGDP").remove();
+          svgTime.selectAll("circle")
             .append("g")
-            .data(dataDB)
+            .data(groupDataTime)
             .enter()
             .append("circle")
-            .attr("r", 2)
-            .attr("cx", d => xScaleYears(d.year))
+            .attr("r", 0)
+            .attr("cx", d => xScaleYears(parseTime(d.year)))
             .attr("cy", d => yScaleGDP(+d.gdp))
             .attr("class", "circleGDP")
-            .attr("id", function(d){return d.name+"_circle";})
+            .attr("id", function(d){
+              return d.code+"_circleGDP";})
             .attr("name", function(d){return d.name;})
-            .style("fill", "white")
+            .style("fill", "#bcbcbc")
             .attr("transform", "translate(48, 25)")
             .on("mouseover", onCircleGDP)
             .on("mouseleave", outCircleGDP)
+            //.transition()
+            //.duration(4750)
+            .attr("r", 2);}
+
+      //Append line and transition
+      d3.selectAll(".lineGDP")
+          .each(function () {
+            createCircle();
+          });
 
 }
 
+//Init tooltip
+const tooltip_time = d3.select("#multiLineBarPlot").append("div").attr("class", "tooltip").style("opacity", 0);
+
+//Mouse over circle
 function onCircleGDP(d){
+  var code_gdp = d3.select(this).attr("id").split("_")[0]
+  brush_gdp = d3.select(this).classed("pc_brushed")
 
-  var string_info =  d.name+ ": " + Math.round(d.gdp * 100) / 100
+  var string_info =  "<p>"+d.name+" :  "+ Math.round(d.gdp * 100) / 100 +"%&nbsp;</p>";
 
-  d3.selectAll(".circleGDP")
-    .attr("opacity", "0.25")
-    .each((item, i) => {
-      if(item.name == d3.select(this).attr("name")){
-        d3.selectAll("#"+d3.select(this).attr("name")+"_circle")
-        .style("fill", "white")
-        .attr("opacity", "1");
+  //Reduce the opacity to all the circle
+  if(brushing == '0'){
+    //Reduce the opacity to all the circle
+    d3.selectAll(".circleGDP")
+      .style("opacity", "0.25")
+      .each((item, i) => {
+        if(item.code == d3.select(this).attr("id").split("_")[0]){
+          d3.selectAll("#"+item.code+"_circleGDP")
+          .style("fill", "#bcbcbc")
+          .style("opacity", "1");
+        }
+      });
+
+    //Reduce the opacity to all the line
+    d3.selectAll(".lineGDP")
+      .style("opacity", "0.25")
+      .attr("stroke-width", 1.5 )
+      .each((item, i) => {
+        if(item.values[0].code == d3.select(this).attr("id").split("_")[0]){
+          d3.select("#"+item.values[0].code+"_lineGDP")
+            .attr("stroke", "#bcbcbc")
+            .attr("stroke-width", 1.5 )
+            .style("opacity", "1");
+        }
+      });
+    //HIGHLIGTH the circle
+    d3.select(this)
+      .attr("r", 4)
+      .style("opacity", 1);
+  }else{
+    d3.selectAll(".lineGDP").each(function(d){
+      if(code_gdp == d.key && brush_gdp== true){
+        d3.select(this)
+          .style("stroke-width", 1.5)
+          .style("stroke", "red");
       }
-    });
+    })
+    if(code_gdp == d.code && brush_gdp== true){
+      d3.selectAll(".circleGDP").each(function(d){
+        if(code_gdp == d.code && brush_gdp== true){
+          d3.select(this)
+            .style("stroke-width", 1)
+            .style("stroke", "red");
+          }
+        })
+        d3.select(this)
+          .attr("r", 4);
+      }else{
 
-  d3.selectAll(".lineGDP")
-    .attr("opacity", "0.25")
-    .attr("stroke-width", 1.5 )
-    .each((item, i) => {
-      if(item.values[0].name == d3.select(this).attr("name")){
-        d3.select("#"+d3.select(this).attr("name")+"_line")
-          .attr("stroke", "white")
-          .attr("stroke-width", 1.5 )
-          .attr("opacity", "1");
+        //HIGHLIGTH the circle
+        d3.select(this)
+          .attr("r", 4)
+          .style("opacity", 0.25);
       }
-    });
 
-  var pos_x =  xScaleYears(d.year)
+  }
+
+  var pos_x =  xScaleYears(parseTime(d.year))
   var pos_y = yScaleGDP(+d.gdp)
 
-  svgTime.append("text")
-        .attr("class", "textGDP")
-        .attr("x", pos_x + 50)
-        .attr("y", pos_y + 20)
-        .attr("fill", "red")
-        .attr("font-size", 9)
-        .text(string_info);
+  //Create tooltip
+  tooltip_time.style("position", "absolute")
+          .style("background-color", "lightgrey")
+          .style("border-radius", "100px")
+          .html(string_info)
+          .attr( 'x', 10)
+          .style("left", (d3.event.pageX + 7) + "px")
+          .style("top", (d3.event.pageY - 70) + "px")
+          .transition()
+          .duration(400)
+          .style("opacity", 0.9);
 
+
+  //Create the vertical line
   svgTime.append("line")
           .attr("class", "vertical_line")
           .attr("x1", pos_x +48)
-          .attr("y1",  heightTime - 178)
+          .attr("y1",  25 )
           .attr("x2", pos_x+48)
           .attr("y2", heightTime - 25)
           .style("stroke-width", 1)
-          .style("stroke", "white")
-          .attr("opacity", 0.25)
+          .style("stroke", "#bcbcbc")
+          .style("opacity", 0.25)
           .style("fill", "none");
 
-    d3.select(this)
-      .attr("r", 4)
-      .style("fill", "red");
+  //HIGHLIGTH other Plots
+  onPlots(d.code);
 }
 
-function outCircleGDP(){
+//Mouse out the circle
+function outCircleGDP(d){
+  //Reset al the opacities
+  if(brushing == '0'){
+    //Reset al the opacities
+    d3.selectAll(".circleGDP")
+      .attr("r", 2)
+      .style("opacity", "1")
+      .style("fill", "#bcbcbc")
 
-  d3.selectAll(".circleGDP")
-    .attr("r", 2)
-    .attr("opacity", "1")
-    .style("fill", "white")
+    d3.selectAll(".lineGDP")
+      .attr("stroke", "#bcbcbc")
+      .style("opacity", "0.8")
+      .attr("stroke-width", 1.5 );
+  }else{
+    d3.selectAll(".lineGDP")
+      .style("stroke-width", 1.5)
+      .style("stroke", "#bcbcbc");
+    d3.selectAll(".circleGDP")
+      .attr("r",2)
+      .style("stroke-width", 1)
+      .style("stroke", "#bcbcbc");
+  }
 
-  d3.selectAll(".lineGDP")
-    .attr("stroke", "white")
-    .attr("opacity", "0.8")
-    .attr("stroke-width", 1.5 );
-
-    d3.selectAll(".textGDP").remove();
-    d3.selectAll(".vertical_line").remove();
-
+  //Remove line
+  d3.selectAll(".vertical_line").remove();
+  //Remove tooltip
+  tooltip_time.transition().duration(300)
+		  .style("opacity", 0);
+  outPlots(d.code);
 }
 
+//Mouse on the line
 function onLineGDP(d){
+  var code_gdp = d3.select(this).attr("id").split("_")[0]
+  brush_gdp = d3.select(this).classed("pc_brushed")
 
-  var string_info =  d.values[0].name;
+  var string_info =  "<p>"+d.values[0].name+" &nbsp;</p>";
+  if(brushing == '0'){
+    //HIGHLIGTH the line and the circle and reduce the opacities of the others
+    d3.selectAll(".circleGDP")
+      .style("opacity", "0.25")
+      .each((item, i) => {
+        if(item.code == code_gdp){
+          d3.selectAll("#"+item.code+"_circleGDP")
+          .style("opacity", "1")
+          .style("fill", "#bcbcbc");
+        }
+      });
 
-  d3.selectAll(".circleGDP")
-    .attr("opacity", "0.25")
-    .each((item, i) => {
-      if(item.name == d3.select(this).attr("name")){
-        d3.selectAll("#"+d3.select(this).attr("name")+"_circle")
-        .attr("opacity", "1")
-        .style("fill", "white");
+    d3.selectAll(".lineGDP")
+      .style("opacity", "0.25")
+      .attr("stroke-width", 1.5 );
+
+    d3.select(this)
+    .attr("stroke", "#bcbcbc")
+    .style("opacity", "1")
+    .attr("stroke-width", 1.5) ;
+  }else{
+    d3.selectAll(".lineGDP").each(function(d){
+      if(code_gdp == d.key && brush_gdp== true){
+        d3.select(this)
+          .style("stroke-width", 1.5)
+          .style("stroke", "red");
       }
-    });
+    })
+    d3.selectAll(".circleGDP").each(function(d){
+      if(code_gdp == d.code && brush_gdp== true){
+        d3.select(this)
+          .style("stroke-width", 0.8)
+          .style("stroke", "red");
+      }
+    })
+  }
 
-  d3.selectAll(".lineGDP")
-    .attr("opacity", "0.25")
-    .attr("stroke-width", 1.5 );
+  //Create tooltip, only for brush??
+  tooltip_time.style("position", "absolute")
+          .style("background-color", "lightgrey")
+          .style("border-radius", "100px")
+          .html(string_info)
+          .attr( 'x', 10)
+          .style("left", (d3.event.pageX + 7) + "px")
+          .style("top", (d3.event.pageY - 70) + "px")
+          .transition()
+          .duration(400)
+          .style("opacity", 0.9);
 
-  d3.select(this)
-  .attr("stroke", "white")
-  .attr("opacity", "1")
-  .attr("stroke-width", 2.5) ;
-
-  svgTime.append("text")
-        .attr("class", "textGDP")
-        .attr("x", d3.event.pageX - widthTime - 120)
-        .attr("y", d3.event.pageY -heightTime - 20)
-        .attr("fill", "red")
-        .attr("font-size", 9)
-        .text(string_info);
-
+  //HIGHLIGTH other Plots
+  onPlots(d.key,brush_gdp);
 }
 
-function outLineGDP(){
-  d3.selectAll(".circleGDP")
-    .attr("r", 2)
-    .attr("opacity", "1")
-    .style("fill", "white");
+//Mouse out of the line
+function outLineGDP(d){
+  //Reset al the opacities
+  if(brushing == '0'){
+    d3.selectAll(".circleGDP")
+      .attr("r", 2)
+      .style("opacity", "1")
+      .style("fill", "#bcbcbc");
 
-  d3.selectAll(".lineGDP")
-    .attr("opacity", "0.8")
-    .attr("stroke", "white")
-    .attr("stroke-width", 1.5 );
+    d3.selectAll(".lineGDP")
+      .style("opacity", "0.8")
+      .attr("stroke", "#bcbcbc")
+      .attr("stroke-width", 1.5 );
+  }else{
+    d3.selectAll(".lineGDP")
+      .style("stroke-width", 1.5)
+      .style("stroke", "#bcbcbc");
+    d3.selectAll(".circleGDP")
+      .style("stroke-width", 1)
+      .style("stroke", "#bcbcbc");
+  }
+  //Delete tooltip
+  tooltip_time.transition().duration(300)
+		  .style("opacity", 0);
+  outPlots(d.key);
+}
 
-  d3.selectAll(".textGDP").remove();
+function onPlots(code_gdp, brush_gdp){
+  //HIGHLIGTH Population bar
+  if(brushing == '0'){
+    if(d3.select("#populationBar_"+code_gdp).node() != null){
+      d3.selectAll(".populationBar")
+        .style("opacity", 0.4);
+      d3.selectAll("#populationBar_"+code_gdp)
+          .style("opacity", 1);
+    }
+    if(checkLabelBar == false){
+      d3.selectAll("#populationBarText_"+code_gdp)
+          .style("opacity", 1);
+    }
+  }else{
+    d3.selectAll("#populationBarText_"+code_gdp).each(function(d){
+      if(brush_gdp == true){
+        d3.select(this).style("opacity", 1);
+        changeColorAxes_y(code_gdp);
+      }
+    })
+
+  }
+
+  //HIGHLIGTH only one bar
+  if(brushing == '0'){
+    if(d3.select("#SexBar_"+code_gdp).node() != null){
+      d3.selectAll(".SexBar")
+        .style("opacity", 0.3);
+
+      d3.selectAll("#SexBar_"+code_gdp)
+          .style("opacity", 1);
+    }
+  }else{
+    d3.selectAll(".SexBar").each(function(d){
+      if(code_gdp == d.code && brush_gdp== true){
+          changeColorAxes_x(code_gdp)
+        }
+    })
+  }
+
+  //HIGHLIGTH the country on the map
+  d3.selectAll(".Country").each((item,i) =>{
+      d3.select("#"+ item.properties.adm0_a3).style("opacity", .5);
+      code_map = d3.select("#"+ item.properties.adm0_a3).attr("id");
+        if(code_map == code_gdp){
+          if(visualization==1 && !zoom_cluster && brushing== '0'){
+            d3.select("#"+item.properties.adm0_a3)
+              .style("stroke", "black")
+              .style("stroke-width", 1.5)
+              .style("opacity",1);
+            }else if(zoom_cluster && brushing=='0'){
+              d3.select("#"+item.properties.adm0_a3)
+                .style("stroke", "black")
+                .style("stroke-width", 2);
+              d3.select("#"+item.properties.adm0_a3).style("opacity",1)
+            }else{
+              if(d3.select("#"+item.properties.adm0_a3).classed("pc_brushed")== true){
+                d3.select("#"+item.properties.adm0_a3)
+                      .style("opacity",1)
+                      .style("stroke-width", 1.5)
+                      .style("stroke", "black");
+              }
+            }
+          }else if(d3.select("#"+ item.properties.adm0_a3).classed("pc_brushed")== true){
+            d3.select("#"+item.properties.adm0_a3)
+              .style("opacity", 1)
+          }
+        })
+
+  //color grey all parallel except this one
+  d3.select("#my_dataviz").selectAll('path').each(function(t){
+    if (d3.select(this).attr("name") != null){
+      if(code_gdp != d3.select(this).attr("name").trim()){
+        d3.select(this).style("stroke", "grey")
+      }
+    }
+  })
+
+  //HIGHLIGTH MDS POINTS
+  d3.select("#pca-kmeans").selectAll("circle").each(function(d){
+    if(!zoom_cluster){
+      if(code_gdp == d3.select(this).attr("id")){
+        d3.select(this).raise().classed("active", true);
+        d3.select(this).attr("r","4")
+        d3.select(this).style("stroke","white")
+        d3.select(this).style("stroke-width", "1")
+      }
+    }else{
+      if(code_gdp == d3.select(this).attr("id")){
+        d3.select(this).raise().classed("active", true);
+        d3.select(this).attr("r",4 / transform.k)
+        d3.select(this).style("stroke","white")
+        d3.select(this).style("stroke-width", "1")
+      }
+    }
+  })
+
+  d3.select("#chart").selectAll("rect").each(function(d){
+    if(code_gdp == d3.select(this).attr("id")){
+      d3.select(this).style("fill", "#6F257F")
+    }
+  })
+}
+
+function outPlots(code_gdp){
+  //DE-HIGHLIGTH Pop Bar
+  if(brushing == '0'){
+  d3.selectAll(".populationBar")
+    .style("opacity", 1);
+  }else{
+    if(checkLabelBar == false){
+      d3.selectAll("#populationBarText_"+code_gdp)
+        .style("opacity", 0);
+    }
+  }
+
+  //DE-HIGHLIGTH Sex Bar
+  if(brushing == '0'){
+    d3.selectAll(".SexBar")
+      .style("opacity", 1);
+  }else{
+    d3.selectAll(".SexBar")
+      .style("stroke-width", 0);
+    }
+
+  //Color white name country
+  d3.select("#y_stacked_axis")
+    .selectAll("text")
+    .style("fill", function(d){
+      return "white";
+    })
+
+   d3.select("#x_stacked_axis")
+     .selectAll("text")
+     .style("fill", function(d){
+        return "white";
+    })
+
+    //DE-HIGHLIGTH the country on the map
+    if(click_countries == 0 && !zoom_cluster  && brushing=="0"){
+      d3.selectAll(".Country")
+          .style("stroke", "#273746")
+          .style("stroke-width", .1)
+          .style("opacity", 1);
+    }else if(zoom_cluster && brushing=='0'){
+      code_cluster.style("opacity",'1')
+                  .style("stroke", "#273746")
+                  .style("stroke-width", .1);
+
+      code_Notcluster.style("opacity",'0.5')
+    }else{
+      d3.selectAll(".Country")
+        .style("stroke", "#273746")
+        .style("stroke-width", .1);
+    }
+
+    if(click_countries != 0){
+      if(brushing == "0"){
+        selected_countries.forEach((item, i) => {
+          d3.select("#"+item)
+          .style('opacity', 1);
+        });
+      }
+    }
+
+    if(click_zoom_country == 1){
+      code_cluster.style("stroke", "black")
+                  .style("stroke-width",  .1);
+      code_Notcluster
+          .style("opacity",'0.5')
+          .style("stroke", "#273746")
+          .style("stroke-width", .1);
+      selected_countries.forEach((item, i) => {
+        d3.select("#"+item)
+        .style('stroke', "black")
+        .style("stroke-width", 1.8);
+      });
+    }
+
+  //Hide labels
+  if(checkLabelBar == false){
+      d3.selectAll("#populationBarText_"+code_gdp)
+          .style("opacity", 0);
+  }
+
+  //color all path on the parallel_coo according its cluster
+  svg_PC.selectAll(".path_parallel").style("stroke", function(d1){
+    var c;
+    d3.select("#pca-kmeans").selectAll("circle").each(function(d2){
+      if(d1.Code == d2.Code){
+        c = d3.select(this).style("fill");
+      }
+    })
+    return c
+  })
+
+  //DE-HIGHLIGTH MDS POINTS
+  d3.select("#pca-kmeans").selectAll("circle").each(function(d){
+    if(!zoom_cluster){
+      if(d3.select(this).classed("pc_brushed") == false && brushing=='1'){
+        d3.select(this).attr("r","4")
+        d3.select(this).style("stroke-width", "0")
+      }else{
+        d3.select(this).attr("r","2")
+        d3.select(this).style("stroke-width", "0")
+      }
+    }else{
+      if(d3.select(this).classed("pc_brushed") == false && brushing=='1'){
+        d3.select(this).attr("r",4 / transform.k)
+        d3.select(this).style("stroke-width", "0")
+      }else{
+        d3.select(this).attr("r",2 / transform.k)
+        d3.select(this).style("stroke-width", "0")
+      }
+    }
+  })
+
+
+  d3.select("#chart").selectAll("rect").each(function(d){
+    if(code_gdp == d3.select(this).attr("id")){
+      d3.select(this).style("fill", "#bcbcbc")
+    }
+  })
 }
