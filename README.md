@@ -55,5 +55,3 @@ For more details, there is the complete [report](https://github.com/danymrt/Visu
 For the setup of the project it will be necessary: 
 * Download all the files except for the Analytic folders
 * Open the index.html with Firefox browser
-
-Or the project is available [here](https://danymrt.github.io/Visual-Analytics/) by opening it with Firefox browser.
